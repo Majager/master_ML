@@ -5,6 +5,7 @@ import datetime
 import random
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score, precision_score, recall_score
+import machine_learning
 
 import os
 os.environ['OMP_NUM_THREADS'] = '1'
@@ -108,29 +109,6 @@ def test_manager(model_meal, model_nonmeal,data,labels,n_segments):
 
     return segments_labels, segments_predictions
 
-# Split the data set into training and validation set based on indices
-def split_data_to_train_and_validation(data,labels,recording_ids,train_indices,validation_indices):
-    validation_data = [data[i] for i in validation_indices]
-    validation_labels = [labels[i] for i in validation_indices]
-    validation_recording_ids = [recording_ids[i] for i in validation_indices]
-
-    # The rest of the data will be in the training set
-    train_data = [data[i] for i in train_indices]
-    train_labels = [labels[i] for i in train_indices]
-
-    return train_data, train_labels, validation_data, validation_labels, validation_recording_ids
-
-def split_data_to_train_and_test(data,labels,train_indices,test_indices,recording_ids):
-    test_data = [data[i] for i in test_indices]
-    test_labels = [labels[i] for i in test_indices]
-    test_recording_ids = [recording_ids[i] for i in test_indices]
-
-    # The rest of the data will be in the training set
-    train_data = [data[i] for i in train_indices]
-    train_labels = [labels[i] for i in train_indices]
-    train_recording_ids = [recording_ids[i] for i in train_indices]
-    return train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids   
-
 # Function to create HMM models, train and test
 # segment_parameters in input is given by [segment_length,overlap_length,n_segments]
 def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, model_arcitechture, segment_parameters): #k_folds
@@ -142,7 +120,7 @@ def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, m
     kfold = KFold(n_splits=len(data), shuffle=True)
     for fold, (train_idx, validation_idx) in enumerate(kfold.split(data)):
         # Split data
-        train_data, train_labels, validation_data, validation_labels, validation_recording_ids = split_data_to_train_and_validation(data,labels,recording_ids,train_idx,validation_idx)
+        train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,train_idx,validation_idx)
         
         # Train HMM models based on train set of this fold
         model_meal = GMMHMM(n_components=n_components_meal,n_mix=n_mix_meal,algorithm="viterbi")
@@ -153,23 +131,15 @@ def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, m
         true, predictions = test_manager(model_meal=model_meal,model_nonmeal=model_nonmeal,data=validation_data,labels=validation_labels,n_segments=segment_parameters[2])
         
         # Store results to pickle file
-        validation_path = f"Results\\{test_name}"
-        if not os.path.exists(validation_path):
-            os.mkdir(validation_path)
-        data_path = os.path.join(validation_path,"data")
-        if not os.path.exists(data_path):
-            os.mkdir(data_path)
-        cv_path = os.path.join(data_path,timestamp)
-        if not os.path.exists(cv_path):
-            os.mkdir(cv_path)
-        full_path = os.path.join(cv_path,f"fold{fold+1}.pickle")
+        r_path = machine_learning.store_results_filename(test_name,timestamp)
+        full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
         with open(full_path,'wb') as handle:
             pickle.dump([true,predictions,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
 
 def run_HMM_model_test(data, labels, recording_ids,test_name,model_arcitechture,segment_parameters):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     [n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal] = model_arcitechture
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = split_data_to_train_and_test(data,labels,[1,2,3],[0],recording_ids)
+    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(data,labels,recording_ids,[1,2,3],[0])
     
     model_meal = GMMHMM(n_components=n_components_meal,n_mix=n_mix_meal,algorithm="viterbi")
     model_nonmeal = GMMHMM(n_components=n_components_nonmeal, n_mix=n_mix_nonmeal, algorithm="viterbi")
@@ -178,15 +148,7 @@ def run_HMM_model_test(data, labels, recording_ids,test_name,model_arcitechture,
     true, predictions = test_manager(model_meal=model_meal,model_nonmeal=model_nonmeal,data=test_data,labels=test_labels,n_segments=segment_parameters[2])
         
     # Store results to pickle file
-    test_path = f"Results\\{test_name}"
-    if not os.path.exists(test_path):
-        os.mkdir(test_path)
-    data_path = os.path.join(test_path,"data")
-    if not os.path.exists(data_path):
-        os.mkdir(data_path)
-    t_path = os.path.join(data_path,timestamp)
-    if not os.path.exists(t_path):
-        os.mkdir(t_path)
-    full_path = os.path.join(t_path,f"test.pickle")
+    r_path = machine_learning.store_results_filename(test_name,timestamp)
+    full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
         pickle.dump([true,predictions,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)

@@ -9,6 +9,7 @@ from hmmlearn.hmm import GMMHMM
 import glob
 import os
 import numpy as np
+import machine_learning
 
 def main():
     # Constants
@@ -35,7 +36,7 @@ def main():
     features, labels = signal_processing.feature_extraction(wav_files, metadata_files, position, segment_length, overlap_length, sr,n_fft,hop_length,n_mfcc,update_features)
     
     # Running machine learning on features
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = hmm.split_data_to_train_and_test(features,labels,[1,2,3],[0],recording_ids)
+    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[1,2,3],[0])
     
     # HMM code
     #hmm.run_HMM_model_train_and_validation(data=train_data, labels=train_labels, recording_ids=train_recording_ids,test_name=test_name,model_arcitechture=[n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal],segment_parameters=[segment_length,overlap_length,n_segments])

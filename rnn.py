@@ -7,6 +7,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 import datetime
 import pickle
+import machine_learning
 
 class RNN:
     def __init__(self):
@@ -29,17 +30,6 @@ class RNN:
 
     def predict(self, X):
         return (self.model.predict(X) > 0.5).astype("int32")
-
-def split_data_to_train_and_test(data,labels,train_indices,test_indices,recording_ids):
-    test_data = [data[i] for i in test_indices]
-    test_labels = [labels[i] for i in test_indices]
-    test_recording_ids = [recording_ids[i] for i in test_indices]
-
-    # The rest of the data will be in the training set
-    train_data = [data[i] for i in train_indices]
-    train_labels = [labels[i] for i in train_indices]
-    train_recording_ids = [recording_ids[i] for i in train_indices]
-    return train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids
 
 # Segments data into different segments for testing
 def segment_labels(true, predictions, segment_size):
@@ -64,7 +54,7 @@ def segment_labels(true, predictions, segment_size):
 def train_test(features,labels,recording_ids,test_name,segment_parameters):
     classifier = RNN()
 
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = split_data_to_train_and_test(features,labels,[1,2,3],[0],recording_ids)
+    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[1,2,3],[0])
     
     train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
     classifier.train(train_data, train_labels)

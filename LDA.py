@@ -6,30 +6,7 @@ import os
 import pickle
 import time
 from sklearn.model_selection import KFold
-
-def split_data_to_train_and_test(data,labels,train_indices,test_indices,recording_ids):
-    test_data = [data[i] for i in test_indices]
-    test_labels = [labels[i] for i in test_indices]
-    test_recording_ids = [recording_ids[i] for i in test_indices]
-
-    # The rest of the data will be in the training set
-    train_data = [data[i] for i in train_indices]
-    train_labels = [labels[i] for i in train_indices]
-    train_recording_ids = [recording_ids[i] for i in train_indices]
-    return train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids
-
-# Split the data set into training and validation set based on indices
-def split_data_to_train_and_validation(data,labels,recording_ids,train_indices,validation_indices):
-    validation_data = [data[i] for i in validation_indices]
-    validation_labels = [labels[i] for i in validation_indices]
-    validation_recording_ids = [recording_ids[i] for i in validation_indices]
-
-    # The rest of the data will be in the training set
-    train_data = [data[i] for i in train_indices]
-    train_labels = [labels[i] for i in train_indices]
-
-    return train_data, train_labels, validation_data, validation_labels, validation_recording_ids
-
+import machine_learning
 
 # Segments data into different segments for testing
 def segment_labels(true, predictions, segment_size):
@@ -64,7 +41,7 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
     kfold = KFold(n_splits=len(data), shuffle=True)
     for fold, (train_idx, validation_idx) in enumerate(kfold.split(data)):
         # Split data
-        train_data, train_labels, validation_data, validation_labels, validation_recording_ids = split_data_to_train_and_validation(data,labels,recording_ids,train_idx,validation_idx)
+        train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,train_idx,validation_idx)
         
         # Train LDA
         classifier = LinearDiscriminantAnalysis()
@@ -81,19 +58,10 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
             segment_parameters[2]=segment_size
         
             # Store results to pickle file
-            validation_path = f"Results\\{test_name}"
-            if not os.path.exists(validation_path):
-                os.mkdir(validation_path)
-            data_path = os.path.join(validation_path,"data")
-            if not os.path.exists(data_path):
-                os.mkdir(data_path)
-            cv_path = os.path.join(data_path,timestamp[idx])
-            if not os.path.exists(cv_path):
-                os.mkdir(cv_path)
-            full_path = os.path.join(cv_path,f"fold{fold+1}.pickle")
+            r_path = machine_learning.store_results_filename(test_name,timestamp[idx])
+            full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
             with open(full_path,'wb') as handle:
                 pickle.dump([true_segmented,predictions_segmented,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
-            
             print("Parameter done", segment_size)
             time.sleep(2)
     
@@ -101,7 +69,7 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
 def train_test(features,labels,recording_ids,test_name,segment_parameters):
     classifier = LinearDiscriminantAnalysis()
 
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = split_data_to_train_and_test(features,labels,[1,2,3],[0],recording_ids)
+    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[1,2,3],[0])
     
     train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
     classifier.fit(train_data, train_labels)
@@ -115,16 +83,7 @@ def train_test(features,labels,recording_ids,test_name,segment_parameters):
     true_segmented, predictions_segmented = segment_labels(test_labels,predictions,segment_parameters[2])
             
     # Store results to pickle file
-    test_path = f"Results\\{test_name}"
-    if not os.path.exists(test_path):
-        os.mkdir(test_path)
-    data_path = os.path.join(test_path,"data")
-    if not os.path.exists(data_path):
-        os.mkdir(data_path)
-    t_path = os.path.join(data_path,timestamp)
-    if not os.path.exists(t_path):
-        os.mkdir(t_path)
-    full_path = os.path.join(t_path,f"test.pickle")
+    r_path = machine_learning.store_results_filename(test_name,timestamp)
+    full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
         pickle.dump([true_segmented,predictions_segmented,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
-
