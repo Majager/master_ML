@@ -1,7 +1,8 @@
 import os
 
-# Split the data set into training and second set based on indices
-def split_data(data,labels,recording_ids,first_indices,second_indices):
+# Split the data set into first and second set based on indices
+def split_data(data,labels,recording_ids,second_indices):
+    first_indices = [j for j in range(len(data)) if j not in set(second_indices)]
     first_data = [data[i] for i in first_indices]
     first_labels = [labels[i] for i in first_indices]
     first_recording_ids = [recording_ids[i] for i in first_indices]

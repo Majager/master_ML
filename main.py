@@ -19,7 +19,7 @@ def main():
     overlap_length = 0.5        # Time in seconds for overlap
     n_fft = 2048                # Number of samples in NFFT for calculating features    
     hop_length = 512            # Number of samples in hop length for features
-    n_mfcc = 39                 # Number of features to extract from MFCC
+    n_mfcc = 20                 # Number of features to extract from MFCC
     update_features = False     # Bool of whether or not to update features, or use previous result from function
     n_mix_meal = 3              # Number of mixtures in the GMMHMM for meal model
     n_components_meal = 5       # Number of hidden states in the model for meal model
@@ -37,7 +37,7 @@ def main():
     features, labels = signal_processing.feature_extraction(wav_files, metadata_files, position, segment_length, overlap_length, sr,n_fft,hop_length,n_mfcc,update_features)
     
     # Running machine learning on features
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[1,2,3,4],[0])
+    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[0])
     
     # HMM code
     #hmm.run_HMM_model_train_and_validation(data=train_data, labels=train_labels, recording_ids=train_recording_ids,test_name=test_name,model_arcitechture=[n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal],segment_parameters=[segment_length,overlap_length,n_segments])
@@ -51,6 +51,6 @@ def main():
     #LDA.train_test(features,labels,recording_ids,test_name,[segment_length,overlap_length,n_segments])
 
     # Lazypredict
-    l_predict.train_test(train_data,train_labels,test_data,test_labels)
+    #l_predict.train_test(train_data,train_labels,test_data,test_labels)
 
 main()

@@ -4,6 +4,7 @@ from matplotlib.colors import Normalize
 import pickle
 import json
 import scipy.signal
+from sklearn.preprocessing import StandardScaler
 
 # https://librosa.org/doc/main/generated/librosa.feature.mfcc.html
 # https://librosa.org/doc/main/generated/librosa.feature.zero_crossing_rate.html
@@ -52,6 +53,36 @@ def convert_to_MFCCs(data_segments, sr, n_fft, hop_length,n_mfcc):
     MFCCs = np.array(MFCCs, dtype=np.float32)
     return MFCCs
 
+# Extract features
+# zero_crossings: measures noisiness
+# rms_energy: measures loudness over time
+# mfcc:  extract frequency bands over time
+# spectral_centroid: determines brightness
+# spectral_bandwidth: determines spread of frequencies
+def convert_to_features(data_segments, sr, n_fft, hop_length,n_mfcc):
+    features = []
+    for i in range(len(data_segments)):
+        features_segment = []
+        # Time domain features
+        zero_crossings_rate = np.mean(librosa.feature.zero_crossing_rate(data_segments[i]))
+        rms_energy = np.mean(librosa.feature.rms(y=data_segments[i]))
+
+        # Frequency domain features
+        mel_spectrogram = librosa.feature.melspectrogram(y = data_segments[i], sr = sr, n_fft = n_fft, hop_length = hop_length)
+        db_spectrogram = librosa.power_to_db(mel_spectrogram, ref = np.max)
+        MFCC = librosa.feature.mfcc(S=db_spectrogram,sr=sr,n_mfcc=n_mfcc)
+        spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=data_segments[i],sr=sr))
+        spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=data_segments[i],sr=sr)) 
+
+        features_segment = [zero_crossings_rate, rms_energy, spectral_centroid, spectral_bandwidth]
+        features_segment.extend(np.mean(MFCC, axis=1))
+        features.append(features_segment)
+    features = np.array(features, dtype=np.float32)
+
+    normalize = StandardScaler()
+    normalized_features = (normalize.fit_transform(features))
+    return normalized_features
+
 # Find labels for meal based on json file
 def convert_labels(meal_start, meal_end, segment_length, overlap_length, sr):
     segment_samples = segment_length * sr
@@ -65,6 +96,10 @@ def convert_labels(meal_start, meal_end, segment_length, overlap_length, sr):
 
     return meal_start_segment, meal_end_segment
 
+def notch_filter(data,sr,notch_freq=50,quality_factor=30):
+    b, a = scipy.signal.iirnotch(notch_freq,quality_factor,sr)
+    return scipy.signal.filtfilt(b,a,data)
+
 # Feature extraction 
 def feature_extraction(file_paths, meta_data_files, position, segment_length, overlap_length, sr, n_fft, hop_length, n_mfcc, update_features = True):
     num_subjects = len(file_paths)
@@ -74,8 +109,15 @@ def feature_extraction(file_paths, meta_data_files, position, segment_length, ov
     if (update_features):
         for i, file_path in enumerate(file_paths,0):
             # Sampling of the wav file, resampled to sr in function
+
+            # Preprocessing
             (data, sr) = librosa.load(file_path, sr = sr, mono = True, dtype = np.float32)
+            data = notch_filter(data,sr)
             data_segments = split_data_in_segments(data, segment_length, overlap_length, sr)
+
+            # Extract features for ML model
+            recording_features = convert_to_features(data_segments,sr,n_fft, hop_length,n_mfcc)
+            features[i] = recording_features
 
             # Extract labels from metadata files
             meta_data = ""
@@ -89,12 +131,8 @@ def feature_extraction(file_paths, meta_data_files, position, segment_length, ov
             data_labels[int(meal_start_segment):int(meal_end_segment)] = 1
             labels[i] = data_labels
 
-            # Extract MFCC as features for ML model
-            data_mfcc = convert_to_MFCCs(data_segments,sr,n_fft, hop_length,n_mfcc)
-            features[i] = data_mfcc
-
         # Store features for later use
-        with open(f'features_mfcc_{position}.pickle', 'wb') as handle:
+        with open(f'features_{position}.pickle', 'wb') as handle:
             pickle.dump([features,labels],handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         # Extract features from previous calculations
@@ -103,4 +141,6 @@ def feature_extraction(file_paths, meta_data_files, position, segment_length, ov
     
     return features,labels
 
+#https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html#sklearn.feature_selection.RFE
+#https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html#sklearn.feature_selection.RFECV
 
