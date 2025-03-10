@@ -12,8 +12,8 @@ import machine_learning
 class RNN:
     def __init__(self):
         self.model = Sequential([
-            Input(shape=(39,1)),
-            LSTM(39, return_sequences=True),
+            Input(shape=(43,1)),
+            LSTM(43, return_sequences=True),
             Dropout(0.2),
             LSTM(20, return_sequences=False),
             Dropout(0.2),

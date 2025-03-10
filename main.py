@@ -11,6 +11,7 @@ import os
 import numpy as np
 import machine_learning
 import l_predict
+import feature_selection
 
 def main():
     # Constants
@@ -39,6 +40,9 @@ def main():
     # Running machine learning on features
     train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[0])
     
+    # Feature selection
+    feature_selection.feature_selection_LDA(train_data, train_labels)
+
     # HMM code
     #hmm.run_HMM_model_train_and_validation(data=train_data, labels=train_labels, recording_ids=train_recording_ids,test_name=test_name,model_arcitechture=[n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal],segment_parameters=[segment_length,overlap_length,n_segments])
     #hmm.run_HMM_model_test(data=features,labels=labels,recording_ids=recording_ids,test_name=test_name,model_arcitechture=[n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal],segment_parameters=[segment_length,overlap_length,n_segments])
