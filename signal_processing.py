@@ -136,7 +136,7 @@ def feature_extraction(file_paths, meta_data_files, position, segment_length, ov
             pickle.dump([features,labels],handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         # Extract features from previous calculations
-        with open(f'features_mfcc_{position}.pickle', 'rb') as handle:
+        with open(f'features_{position}.pickle', 'rb') as handle:
             features,labels = pickle.load(handle)
     
     return features,labels

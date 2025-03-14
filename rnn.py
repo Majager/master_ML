@@ -12,8 +12,8 @@ import machine_learning
 class RNN:
     def __init__(self):
         self.model = Sequential([
-            Input(shape=(43,1)),
-            LSTM(43, return_sequences=True),
+            Input(shape=(39,1)),
+            LSTM(39, return_sequences=True),
             Dropout(0.2),
             LSTM(20, return_sequences=False),
             Dropout(0.2),
@@ -54,7 +54,7 @@ def segment_labels(true, predictions, segment_size):
 def train_test(features,labels,recording_ids,test_name,segment_parameters):
     classifier = RNN()
 
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[1,2,3],[0])
+    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[0])
     
     train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
     classifier.train(train_data, train_labels)

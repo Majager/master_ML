@@ -41,7 +41,7 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
     kfold = KFold(n_splits=len(data), shuffle=True)
     for fold, (train_idx, validation_idx) in enumerate(kfold.split(data)):
         # Split data
-        train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,train_idx,validation_idx)
+        train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,validation_idx)
         
         # Train LDA
         classifier = LinearDiscriminantAnalysis()

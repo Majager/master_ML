@@ -139,7 +139,7 @@ def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, m
 def run_HMM_model_test(data, labels, recording_ids,test_name,model_arcitechture,segment_parameters):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     [n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal] = model_arcitechture
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(data,labels,recording_ids,[1,2,3],[0])
+    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(data,labels,recording_ids,[0])
     
     model_meal = GMMHMM(n_components=n_components_meal,n_mix=n_mix_meal,algorithm="viterbi")
     model_nonmeal = GMMHMM(n_components=n_components_nonmeal, n_mix=n_mix_nonmeal, algorithm="viterbi")
