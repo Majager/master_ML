@@ -8,26 +8,6 @@ import time
 from sklearn.model_selection import KFold
 import machine_learning
 
-# Segments data into different segments for testing
-def segment_labels(true, predictions, segment_size):
-    # Find number of observations in the data
-    segmented_true = []
-    segmented_predictions = []
-
-    for i in range(len(true)):
-        number_subsequences = len(true[i])//segment_size
-        subject_segmented_true = []
-        subject_segmented_predictions = []
-        for j in range(0,number_subsequences):
-            # Majority voting for the separate segments
-            subsequence_true = round(np.mean(true[i][(j*segment_size):((j+1)*segment_size)]))
-            subsequence_predictions = round(np.mean(predictions[i][(j*segment_size):((j+1)*segment_size)]))
-            subject_segmented_true.append(subsequence_true)
-            subject_segmented_predictions.append(subsequence_predictions)
-        segmented_true.append(subject_segmented_true)
-        segmented_predictions.append(subject_segmented_predictions)
-    return segmented_true,segmented_predictions
-
 # Function to create the LDA model
 def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment_parameters): #k_folds
     # Timestamp of cross-validation
@@ -49,20 +29,22 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
         classifier.fit(train_data, train_labels)
 
         predictions = []
+        predictions_proba = []
         for idx in range(len(validation_data)):
             predictions.append(classifier.predict(validation_data[idx]))
+            predictions_proba.append(classifier.predict_proba(validation_data[idx]))
 
         for idx, segment_size in enumerate(segment_sizes):
-            true_segmented, predictions_segmented = segment_labels(validation_labels,predictions,segment_size)
-
+            true_segmented, predictions_segmented, predictions_segmented_proba = machine_learning.segment_labels(validation_labels,predictions,predictions_proba,segment_parameters[2])
+     
             segment_parameters[2]=segment_size
         
             # Store results to pickle file
             r_path = machine_learning.store_results_filename(test_name,timestamp[idx])
             full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
             with open(full_path,'wb') as handle:
-                pickle.dump([true_segmented,predictions_segmented,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
-            print("Parameter done", segment_size)
+                pickle.dump([true_segmented,predictions_segmented,predictions_segmented_proba,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)            
+                print("Parameter done", segment_size)
             time.sleep(2)
     
 
@@ -75,15 +57,17 @@ def train_test(features,labels,recording_ids,test_name,segment_parameters):
     classifier.fit(train_data, train_labels)
 
     predictions = []
+    predictions_proba = []
     for idx in range(len(test_data)):
         predictions.append(classifier.predict(test_data[idx]))
+        predictions_proba.append(classifier.predict_proba(test_data[idx]))
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    true_segmented, predictions_segmented = segment_labels(test_labels,predictions,segment_parameters[2])
+    true_segmented, predictions_segmented, predictions_segmented_proba = machine_learning.segment_labels(test_labels,predictions,predictions_proba,segment_parameters[2])
             
     # Store results to pickle file
     r_path = machine_learning.store_results_filename(test_name,timestamp)
     full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
-        pickle.dump([true_segmented,predictions_segmented,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump([true_segmented,predictions_segmented,predictions_segmented_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)

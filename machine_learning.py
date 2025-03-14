@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 # Split the data set into first and second set based on indices
 def split_data(data,labels,recording_ids,second_indices):
@@ -23,3 +24,27 @@ def store_results_filename(test_name,timestamp):
     if not os.path.exists(r_path):
         os.mkdir(r_path)
     return r_path
+
+# Segments data into different segments for testing
+def segment_labels(true, predictions, predictions_proba, segment_size):
+    # Find number of observations in the data
+    segmented_true = []
+    segmented_predictions = []
+    segmented_predictions_proba = []
+
+    for i in range(len(true)):
+        subject_segmented_true = []
+        subject_segmented_predictions = []
+        subject_segmented_predictions_proba = []
+        for j in range(0,len(true[i])-segment_size):
+            # Majority voting for the separate segments
+            subsequence_true = round(np.mean(true[i][j:(j+segment_size)]))
+            subsequence_predictions = round(np.mean(predictions[i][j:(j+segment_size)]))
+            subsequence_predictions_proba = round(np.mean(predictions_proba[i][j:(j+segment_size)]))
+            subject_segmented_true.append(subsequence_true)
+            subject_segmented_predictions.append(subsequence_predictions)
+            subject_segmented_predictions_proba.append(subsequence_predictions_proba)
+        segmented_true.append(subject_segmented_true)
+        segmented_predictions.append(subject_segmented_predictions)
+        segmented_predictions_proba.append(subject_segmented_predictions_proba)
+    return segmented_true,segmented_predictions, segmented_predictions_proba

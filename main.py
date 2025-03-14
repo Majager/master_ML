@@ -27,7 +27,7 @@ def main():
     n_components_meal = 5       # Number of hidden states in the model for meal model
     n_mix_nonmeal = 6           # Number of mixtures in the GMMHMM for nonmeal model
     n_components_nonmeal = 7    # Number of hidden states in the model for nonmeal model
-    test_name = "l_predict"   # Test name 
+    test_name = "hmm_validation"   # Test name 
     n_segments = 70            # Number of segments in a sub sequence for testing
     
     # Find recorded data
@@ -45,7 +45,7 @@ def main():
     #feature_selection.feature_selection_LDA(train_data, train_labels)
 
     # Hyperparameter optimization
-    rnn_hyperparamater_optimization.run_rnn_hyperparameters_search(train_data,train_labels,train_recording_ids,test_name,[segment_length,overlap_length,n_segments])
+    #rnn_hyperparamater_optimization.run_rnn_hyperparameters_search(train_data,train_labels,train_recording_ids,test_name,[segment_length,overlap_length,n_segments])
 
     # HMM code
     #hmm.run_HMM_model_train_and_validation(data=train_data, labels=train_labels, recording_ids=train_recording_ids,test_name=test_name,model_arcitechture=[n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal],segment_parameters=[segment_length,overlap_length,n_segments])
@@ -55,7 +55,7 @@ def main():
     #rnn.train_test(features,labels,recording_ids,test_name,[segment_length,overlap_length,n_segments])
 
     #LDA
-    #LDA.run_LDA_train_and_validation(train_data,train_labels,train_recording_ids,test_name,[segment_length,overlap_length,n_segments])
+    LDA.run_LDA_train_and_validation(train_data,train_labels,train_recording_ids,test_name,[segment_length,overlap_length,n_segments])
     #LDA.train_test(features,labels,recording_ids,test_name,[segment_length,overlap_length,n_segments])
 
     # Lazypredict

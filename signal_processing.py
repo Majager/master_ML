@@ -59,6 +59,9 @@ def convert_to_MFCCs(data_segments, sr, n_fft, hop_length,n_mfcc):
 # mfcc:  extract frequency bands over time
 # spectral_centroid: determines brightness
 # spectral_bandwidth: determines spread of frequencies
+# spectral contrast: 
+# spectral rolloff: 
+# spectral flatness:
 def convert_to_features(data_segments, sr, n_fft, hop_length,n_mfcc):
     features = []
     for i in range(len(data_segments)):
@@ -71,12 +74,16 @@ def convert_to_features(data_segments, sr, n_fft, hop_length,n_mfcc):
         mel_spectrogram = librosa.feature.melspectrogram(y = data_segments[i], sr = sr, n_fft = n_fft, hop_length = hop_length)
         db_spectrogram = librosa.power_to_db(mel_spectrogram, ref = np.max)
         MFCC = librosa.feature.mfcc(S=db_spectrogram,sr=sr,n_mfcc=n_mfcc)
-        spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=data_segments[i],sr=sr))
-        spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=data_segments[i],sr=sr)) 
-
-        features_segment = [zero_crossings_rate, rms_energy, spectral_centroid, spectral_bandwidth]
+        spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft))
+        spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft)) 
+        spectral_contrast = np.mean(librosa.feature.spectral_contrast(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft))
+        spectral_rolloff = np.mean(librosa.feature.spectral_rolloff(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft))
+        spectral_flatness = np.mean(librosa.feature.spectral_flatness(y=data_segments[i],hop_length=hop_length,n_fft=n_fft))
+        
+        features_segment = [zero_crossings_rate, rms_energy, spectral_centroid, spectral_bandwidth, spectral_contrast, spectral_rolloff, spectral_flatness]
         features_segment.extend(np.mean(MFCC, axis=1))
         features.append(features_segment)
+    
     features = np.array(features, dtype=np.float32)
 
     normalize = StandardScaler()

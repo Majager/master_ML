@@ -57,11 +57,11 @@ def segment_data(data, lengths, labels, segment_size):
         subject_segments_length = subject_length//segment_size
         subject_segmented_data = []
         subject_segmented_labels = []
-        for j in range(0,subject_segments_length):
+        for j in range(0,subject_length-segment_size):
             # Find index based on which segment from specific subject
             # Find a section of the data and divide in to separate components of the vector
-            segment_start_idx = j*segment_size
-            segment_end_idx = (j+1)*segment_size
+            segment_start_idx = j
+            segment_end_idx = j+segment_size
             segment = data[(start_idx+segment_start_idx):(start_idx+segment_end_idx)]  
             # Find index in labels based on which segment from specific subject
             subject_segmented_data.append(segment)
@@ -95,8 +95,10 @@ def test_manager(model_meal, model_nonmeal,data,labels,n_segments):
     segments_data, segments_labels = segment_data(validation_data,lengths,labels,n_segments)
     
     segments_predictions = []
+    segments_predictions_proba = []
     for subject_idx in range(len(segments_data)):
         subject_predictions = []
+        subject_predictions_proba = []
         for segment in segments_data[subject_idx]:
             segment = segment.reshape(-1, validation_data.shape[1])
             meal_score = model_meal.score(segment)
@@ -105,9 +107,11 @@ def test_manager(model_meal, model_nonmeal,data,labels,n_segments):
                 subject_predictions.append(1)
             else:
                 subject_predictions.append(0)
+            subject_predictions_proba.append(np.exp(meal_score))
         segments_predictions.append(subject_predictions)
+        segments_predictions_proba.append(subject_predictions_proba)
 
-    return segments_labels, segments_predictions
+    return segments_labels, segments_predictions, segments_predictions_proba
 
 # Function to create HMM models, train and test
 # segment_parameters in input is given by [segment_length,overlap_length,n_segments]
@@ -120,7 +124,7 @@ def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, m
     kfold = KFold(n_splits=len(data), shuffle=True)
     for fold, (train_idx, validation_idx) in enumerate(kfold.split(data)):
         # Split data
-        train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,train_idx,validation_idx)
+        train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,validation_idx)
         
         # Train HMM models based on train set of this fold
         model_meal = GMMHMM(n_components=n_components_meal,n_mix=n_mix_meal,algorithm="viterbi")
@@ -128,13 +132,13 @@ def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, m
         model_meal, model_nonmeal = train_manager(model_meal=model_meal,model_nonmeal=model_nonmeal,data=train_data,labels=train_labels)
         
         # Test HMM model based on the validation fold of this iteration
-        true, predictions = test_manager(model_meal=model_meal,model_nonmeal=model_nonmeal,data=validation_data,labels=validation_labels,n_segments=segment_parameters[2])
+        true, predictions, predictions_proba = test_manager(model_meal=model_meal,model_nonmeal=model_nonmeal,data=validation_data,labels=validation_labels,n_segments=segment_parameters[2])
         
         # Store results to pickle file
         r_path = machine_learning.store_results_filename(test_name,timestamp)
         full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
         with open(full_path,'wb') as handle:
-            pickle.dump([true,predictions,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump([true,predictions,predictions_proba,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
 
 def run_HMM_model_test(data, labels, recording_ids,test_name,model_arcitechture,segment_parameters):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -145,10 +149,10 @@ def run_HMM_model_test(data, labels, recording_ids,test_name,model_arcitechture,
     model_nonmeal = GMMHMM(n_components=n_components_nonmeal, n_mix=n_mix_nonmeal, algorithm="viterbi")
     model_meal, model_nonmeal = train_manager(model_meal=model_meal,model_nonmeal=model_nonmeal,data=train_data,labels=train_labels)
     
-    true, predictions = test_manager(model_meal=model_meal,model_nonmeal=model_nonmeal,data=test_data,labels=test_labels,n_segments=segment_parameters[2])
+    true, predictions, predictions_proba = test_manager(model_meal=model_meal,model_nonmeal=model_nonmeal,data=test_data,labels=test_labels,n_segments=segment_parameters[2])
         
     # Store results to pickle file
     r_path = machine_learning.store_results_filename(test_name,timestamp)
     full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
-        pickle.dump([true,predictions,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump([true,predictions,predictions_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)

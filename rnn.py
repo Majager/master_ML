@@ -12,8 +12,8 @@ import machine_learning
 class RNN:
     def __init__(self):
         self.model = Sequential([
-            Input(shape=(39,1)),
-            LSTM(39, return_sequences=True),
+            Input(shape=(46,1)),
+            LSTM(46, return_sequences=True),
             Dropout(0.2),
             LSTM(20, return_sequences=False),
             Dropout(0.2),
@@ -30,26 +30,9 @@ class RNN:
 
     def predict(self, X):
         return (self.model.predict(X) > 0.5).astype("int32")
-
-# Segments data into different segments for testing
-def segment_labels(true, predictions, segment_size):
-    # Find number of observations in the data
-    segmented_true = []
-    segmented_predictions = []
-
-    for i in range(len(true)):
-        number_subsequences = len(true[i])//segment_size
-        subject_segmented_true = []
-        subject_segmented_predictions = []
-        for j in range(0,number_subsequences):
-            # Majority voting for the separate segments
-            subsequence_true = round(np.mean(true[i][(j*segment_size):((j+1)*segment_size)]))
-            subsequence_predictions = round(np.mean(predictions[i][(j*segment_size):((j+1)*segment_size)]))
-            subject_segmented_true.append(subsequence_true)
-            subject_segmented_predictions.append(subsequence_predictions)
-        segmented_true.append(subject_segmented_true)
-        segmented_predictions.append(subject_segmented_predictions)
-    return segmented_true,segmented_predictions
+    
+    def predict_proba(self, X):
+        return (self.model.predict(X)).astype("float32")
 
 def train_test(features,labels,recording_ids,test_name,segment_parameters):
     classifier = RNN()
@@ -60,12 +43,14 @@ def train_test(features,labels,recording_ids,test_name,segment_parameters):
     classifier.train(train_data, train_labels)
 
     predictions = []
+    predictions_proba = []
     for idx in range(len(test_data)):
         predictions.append(classifier.predict(test_data[idx]))
+        predictions_proba.append(classifier.predict_proba(test_data[idx]))
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             
-    true_segmented, predictions_segmented = segment_labels(test_labels,predictions,segment_parameters[2])
+    true_segmented, predictions_segmented, predictions_segmented_proba = machine_learning.segment_labels(test_labels,predictions,predictions_proba,segment_parameters[2])
         
     # Store results to pickle file
     test_path = f"Results\\{test_name}"
@@ -79,4 +64,4 @@ def train_test(features,labels,recording_ids,test_name,segment_parameters):
         os.mkdir(t_path)
     full_path = os.path.join(t_path,f"test.pickle")
     with open(full_path,'wb') as handle:
-        pickle.dump([true_segmented,predictions_segmented,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump([true_segmented,predictions_segmented,predictions_segmented_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
