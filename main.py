@@ -22,7 +22,7 @@ def main():
     n_fft = 2048                # Number of samples in NFFT for calculating features    
     hop_length = 512            # Number of samples in hop length for features
     n_mfcc = 39                 # Number of features to extract from MFCC
-    update_features = False     # Bool of whether or not to update features, or use previous result from function
+    update_features = False      # Bool of whether or not to update features, or use previous result from function
     n_mix_meal = 3              # Number of mixtures in the GMMHMM for meal model
     n_components_meal = 5       # Number of hidden states in the model for meal model
     n_mix_nonmeal = 6           # Number of mixtures in the GMMHMM for nonmeal model
@@ -55,10 +55,10 @@ def main():
     #rnn.train_test(features,labels,recording_ids,test_name,[segment_length,overlap_length,n_segments])
 
     #LDA
-    LDA.run_LDA_train_and_validation(train_data,train_labels,train_recording_ids,test_name,[segment_length,overlap_length,n_segments])
+    #LDA.run_LDA_train_and_validation(train_data,train_labels,train_recording_ids,test_name,[segment_length,overlap_length,n_segments])
     #LDA.train_test(features,labels,recording_ids,test_name,[segment_length,overlap_length,n_segments])
 
     # Lazypredict
-    #l_predict.train_test(train_data,train_labels,test_data,test_labels)
+    l_predict.train_test(train_data,train_labels,test_data,test_labels)
 
 main()
