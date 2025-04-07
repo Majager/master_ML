@@ -121,11 +121,7 @@ def feature_extraction(file_paths, meta_data_files, position, segment_length, ov
             (data, sr) = librosa.load(file_path, sr = sr, mono = True, dtype = np.float32)
             data = notch_filter(data,sr)
             data_segments = split_data_in_segments(data, segment_length, overlap_length, sr)
-
-            # Extract features for ML model
-            recording_features = convert_to_features(data_segments,sr,n_fft, hop_length,n_mfcc)
-            features[i] = recording_features
-
+            
             # Extract labels from metadata files
             meta_data = ""
             audio_offset = 0
@@ -138,12 +134,16 @@ def feature_extraction(file_paths, meta_data_files, position, segment_length, ov
             data_labels[int(meal_start_segment):int(meal_end_segment)] = 1
             labels[i] = data_labels
 
+            # Extract features for ML model
+            recording_features = convert_to_features(data_segments,sr,n_fft, hop_length,n_mfcc)
+            features[i] = recording_features
+
         # Store features for later use
-        with open(f'features_{position}.pickle', 'wb') as handle:
+        with open(f'features_{position}_{segment_length}.pickle', 'wb') as handle:
             pickle.dump([features,labels],handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         # Extract features from previous calculations
-        with open(f'features_{position}.pickle', 'rb') as handle:
+        with open(f'features_{position}_{segment_length}.pickle', 'rb') as handle:
             features,labels = pickle.load(handle)
     
     return features,labels
