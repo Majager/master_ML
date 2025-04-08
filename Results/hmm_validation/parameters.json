@@ -1,9 +1,0 @@
-{
-    "n_mix_meal": 3,
-    "n_components_meal": 5,
-    "n_mix_nonmeal": 6,
-    "n_components_nonmeal": 7,
-    "n_segments": 90,
-    "test_parameter": "test",
-    "test_values": ["test 1"]
-}

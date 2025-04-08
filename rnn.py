@@ -34,11 +34,8 @@ class RNN:
     def predict_proba(self, X):
         return (self.model.predict(X)).astype("float32")
 
-def train_test(features,labels,recording_ids,test_name,segment_parameters):
+def train_test(train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids,test_name,segment_parameters):
     classifier = RNN()
-
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[0])
-    
     train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
     classifier.train(train_data, train_labels)
 
@@ -53,15 +50,8 @@ def train_test(features,labels,recording_ids,test_name,segment_parameters):
     true_segmented, predictions_segmented, predictions_segmented_proba = machine_learning.segment_labels(test_labels,predictions,predictions_proba,segment_parameters[2])
         
     # Store results to pickle file
-    test_path = f"Results\\{test_name}"
-    if not os.path.exists(test_path):
-        os.mkdir(test_path)
-    data_path = os.path.join(test_path,"data")
-    if not os.path.exists(data_path):
-        os.mkdir(data_path)
-    t_path = os.path.join(data_path,timestamp)
-    if not os.path.exists(t_path):
-        os.mkdir(t_path)
-    full_path = os.path.join(t_path,f"test.pickle")
+    r_path = machine_learning.store_results_filename(test_name,timestamp)
+    full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
         pickle.dump([true_segmented,predictions_segmented,predictions_segmented_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+    machine_learning.store_parameters(test_name, ["test"])

@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import json
 
 # Split the data set into first and second set based on indices
 def split_data(data,labels,recording_ids,second_indices):
@@ -48,3 +49,23 @@ def segment_labels(true, predictions, predictions_proba, segment_size):
         segmented_predictions.append(subject_segmented_predictions)
         segmented_predictions_proba.append(subject_segmented_predictions_proba)
     return segmented_true,segmented_predictions, segmented_predictions_proba
+
+def store_parameters(test_name, new_test_values):
+    results_path = f"Results\\{test_name}"
+    file_name = os.path.join(f"Results\\{test_name}","parameters.json")
+    parameters = []
+
+    if not os.path.exists(results_path):
+        os.mkdir(results_path)
+    
+    if os.path.exists(file_name):
+        with open(file_name, 'r') as json_file:
+            parameters = json.load(json_file)
+        parameters['test_values'].extend(new_test_values)
+    else: 
+        parameters = {
+            'test_values': new_test_values
+        }
+    
+    with open(file_name,'w') as json_file:
+        json.dump(parameters,json_file,indent=3)

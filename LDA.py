@@ -47,12 +47,11 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
                 print("Parameter done", segment_size)
             time.sleep(2)
     
-
-def train_test(features,labels,recording_ids,test_name,segment_parameters):
-    classifier = LinearDiscriminantAnalysis()
-
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[1,2,3],[0])
+    machine_learning.store_parameters(test_name, [segment_sizes])
     
+
+def train_test(train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids,test_name,segment_parameters):
+    classifier = LinearDiscriminantAnalysis()
     train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
     classifier.fit(train_data, train_labels)
 
@@ -71,3 +70,5 @@ def train_test(features,labels,recording_ids,test_name,segment_parameters):
     full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
         pickle.dump([true_segmented,predictions_segmented,predictions_segmented_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+    
+    machine_learning.store_parameters(test_name, ["test"])

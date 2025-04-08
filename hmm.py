@@ -139,12 +139,12 @@ def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, m
         full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
         with open(full_path,'wb') as handle:
             pickle.dump([true,predictions,predictions_proba,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+    machine_learning.store_parameters(test_name, ["test"])
 
-def run_HMM_model_test(data, labels, recording_ids,test_name,model_arcitechture,segment_parameters):
+def run_HMM_model_test(train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids,test_name,model_arcitechture,segment_parameters):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     [n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal] = model_arcitechture
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(data,labels,recording_ids,[0])
-    
+
     model_meal = GMMHMM(n_components=n_components_meal,n_mix=n_mix_meal,algorithm="viterbi")
     model_nonmeal = GMMHMM(n_components=n_components_nonmeal, n_mix=n_mix_nonmeal, algorithm="viterbi")
     model_meal, model_nonmeal = train_manager(model_meal=model_meal,model_nonmeal=model_nonmeal,data=train_data,labels=train_labels)
@@ -156,3 +156,4 @@ def run_HMM_model_test(data, labels, recording_ids,test_name,model_arcitechture,
     full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
         pickle.dump([true,predictions,predictions_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+    machine_learning.store_parameters(test_name, ["test"])
