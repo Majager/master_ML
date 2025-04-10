@@ -22,7 +22,7 @@ class RNN:
         ])
         self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-    def train(self, X, y, batch_size=32, epochs=20, validation_split=0.2):
+    def fit(self, X, y, batch_size=32, epochs=20, validation_split=0.2):
         self.history = self.model.fit(X, y, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
 
     def evaluate(self, X, y):
