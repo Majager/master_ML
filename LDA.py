@@ -18,7 +18,7 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
         time.sleep(1)
 
     # Cross-validation loop to be able to average over all folds
-    kfold = KFold(n_splits=len(data), shuffle=True)
+    kfold = KFold(n_splits=10, shuffle=True)
     for fold, (train_idx, validation_idx) in enumerate(kfold.split(data)):
         # Split data
         train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,validation_idx)
@@ -47,7 +47,7 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
                 print("Parameter done", segment_size)
             time.sleep(2)
     
-    machine_learning.store_parameters(test_name, [segment_sizes])
+    machine_learning.store_parameters(test_name, segment_sizes)
     
 
 def train_test(train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids,test_name,segment_parameters):

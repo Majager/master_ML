@@ -121,7 +121,7 @@ def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, m
     [n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal] = model_arcitechture
 
     # Cross-validation loop to be able to average over all folds
-    kfold = KFold(n_splits=len(data), shuffle=True)
+    kfold = KFold(n_splits=10, shuffle=True)
     for fold, (train_idx, validation_idx) in enumerate(kfold.split(data)):
         # Split data
         train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,validation_idx)

@@ -7,7 +7,7 @@ def main():
     # Parameters
     sr = 22050                  # Sampling rate of signal reading, None corresponds to true value
     segment_length = 1          # Time in seconds for each segment
-    overlap_length = 0.5        # Time in seconds for overlap
+    overlap_length = 0.5*segment_length        # Time in seconds for overlap
     n_fft = 2048                # Number of samples in NFFT for calculating features    
     hop_length = 512            # Number of samples in hop length for features
     n_mfcc = 39                 # Number of features to extract from MFCC
@@ -25,13 +25,13 @@ def main():
     test_name = f"{model}_{suffix}"
     
     # Find recorded data
-    root_folder_path = 'C:\\Users\\MajaE\\src\\repos\\master_ML\\Recordings'
+    root_folder_path = 'C:\\Users\\MajaE\\src\\repos\\master_ML\\Data'
     position = 'pos1'
-    wav_files, metadata_files, recording_ids = file_convert.find_data(root_folder_path,position)
+    wav_files, metadata_files, file_ids = file_convert.find_data(root_folder_path,position)
     
     # Feature extraction from recorded data
-    features, labels = signal_processing.feature_extraction(wav_files, metadata_files, position, segment_length, overlap_length, sr,n_fft,hop_length,n_mfcc,update_features)
+    features, labels, recording_ids = signal_processing.feature_extraction(wav_files, metadata_files, file_ids, position, segment_length, overlap_length, sr,n_fft,hop_length,n_mfcc,update_features)
     
-    run.run_test(model,validation_set,test_name,features,labels,recording_ids,[n_mix_meal, n_components_meal, n_mix_nonmeal, n_components_nonmeal],[segment_length,overlap_length,n_segments])
+    run.run_test(model,validation_set,test_name,features,labels,recording_ids,{0:[n_components_nonmeal, n_mix_nonmeal], 1:[n_components_meal, n_mix_meal]},[segment_length,overlap_length,n_segments])
     
 main()

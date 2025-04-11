@@ -24,14 +24,15 @@ class HMM(ClassifierMixin, BaseEstimator):
         for class_label in self.classes:
             [n_c, n_m] = self.model_arcitechture[class_label]
             model = GMMHMM(n_components=n_c,n_mix=n_m,algorithm="viterbi")
-            model.fit(X[y==class_label], lengths[class_label])
+            class_data = [X[idx] for idx in range(len(y)) if y[idx] == class_label]
+            model.fit(class_data, lengths[class_label])
             self.models[class_label] = model
         return self
     
     # Predicts value for segment
     def _predict_segments(self, segments_data, n_features):
         segments_predictions = []
-        for recording in segment_data:
+        for recording in segments_data:
             recording_predictions = []
             for segment in recording:
                 segment = segment.reshape(-1, n_features)
@@ -73,20 +74,20 @@ class HMM(ClassifierMixin, BaseEstimator):
 
 # Segments data into different segments for testing
 # Data is in format (n_recordings, n_segments, n_features)
-def segment_data(data, labels = None , segment_size = 50, step_size = 1):
+def segment_data(data, labels = None , n_segments = 50, step_size = 1):
     # Find number of observations in the data
     segmented_data = []
     segmented_labels = []
 
     for i, recording in enumerate(data):
         recording_segmented_data, recording_segmented_labels = [], []
-        for segment_start_idx in range(0,len(recording)-segment_size,step_size):
-            segment = recording[(segment_start_idx):(segment_start_idx+segment_size)]  
+        for segment_start_idx in range(0,len(recording)-n_segments,step_size):
+            segment = recording[(segment_start_idx):(segment_start_idx+n_segments)]  
             # Find index in labels based on which segment from specific recording
             recording_segmented_data.append(segment)
             # Majority voting for the separate segments
             if labels != None:
-                labels_segment = mode(labels[i][segment_start_idx:(segment_start_idx+segment_size)])
+                labels_segment = mode(labels[i][segment_start_idx:(segment_start_idx+n_segments)])
                 recording_segmented_labels.append(labels_segment)
         segmented_data.append(recording_segmented_data)
         segmented_labels.append(recording_segmented_labels)
@@ -156,11 +157,11 @@ def train_manager(hmm, data, labels):
     hmm = hmm.fit(data,labels,lengths)
     return hmm
 
-def test_manager(hmm, data, labels, segment_size = 50):
+def test_manager(hmm, data, labels, n_segments = 50):
     data, labels, lengths = prepare_test_data(data, labels)
-    _, segments_labels = segment_data(data,lengths,segment_size)
+    _, segments_labels = segment_data(data,lengths,n_segments)
     segments_predictions = hmm.predict(data, lengths)
-    segments_predictions_proba = hmm.predict_proba(data, lengths, segment_size)
+    segments_predictions_proba = hmm.predict_proba(data, lengths, n_segments)
     return segments_labels, segments_predictions, segments_predictions_proba
 
 # Function to create HMM models, train and test
@@ -170,7 +171,7 @@ def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, m
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Cross-validation loop to be able to average over all folds
-    kfold = KFold(n_splits=len(data), shuffle=True)
+    kfold = KFold(n_splits=10, shuffle=True)
     for fold, (train_idx, validation_idx) in enumerate(kfold.split(data)):
         # Split data
         train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,validation_idx)

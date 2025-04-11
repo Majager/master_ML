@@ -108,12 +108,15 @@ def notch_filter(data,sr,notch_freq=50,quality_factor=30):
     return scipy.signal.filtfilt(b,a,data)
 
 # Feature extraction 
-def feature_extraction(file_paths, meta_data_files, position, segment_length, overlap_length, sr, n_fft, hop_length, n_mfcc, update_features = True):
-    num_subjects = len(file_paths)
-    features = np.empty(num_subjects,dtype=object)
-    labels = np.empty(num_subjects,dtype=object)
+def feature_extraction(file_paths, meta_data_files, file_ids, position, segment_length, overlap_length, sr, n_fft, hop_length, n_mfcc, update_features = True):
+    features = []
+    labels = []
+    recording_ids = []
 
     if (update_features):
+        num_subjects = len(file_paths)
+        features = np.empty(num_subjects,dtype=object)
+        labels = np.empty(num_subjects,dtype=object)
         for i, file_path in enumerate(file_paths,0):
             # Sampling of the wav file, resampled to sr in function
 
@@ -138,15 +141,17 @@ def feature_extraction(file_paths, meta_data_files, position, segment_length, ov
             recording_features = convert_to_features(data_segments,sr,n_fft, hop_length,n_mfcc)
             features[i] = recording_features
 
+        recording_ids = file_ids
+
         # Store features for later use
         with open(f'features_{position}_{segment_length}.pickle', 'wb') as handle:
-            pickle.dump([features,labels],handle, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump([features,labels, recording_ids],handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         # Extract features from previous calculations
         with open(f'features_{position}_{segment_length}.pickle', 'rb') as handle:
-            features,labels = pickle.load(handle)
+            features,labels, recording_ids = pickle.load(handle)
     
-    return features,labels
+    return features,labels, recording_ids
 
 #https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html#sklearn.feature_selection.RFE
 #https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html#sklearn.feature_selection.RFECV
