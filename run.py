@@ -6,7 +6,7 @@ import l_predict
 
 def run_test(model,validation_set,test_name,features,labels,recording_ids,model_arcitechture,segment_parameters):
     # Running machine learning on features
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[0])
+    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[2,5,21,22,28,32,39,44,46])
     
     # LDA
     if model.upper() == "LDA":
