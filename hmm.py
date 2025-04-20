@@ -4,10 +4,10 @@ import pickle
 import datetime
 import random
 from sklearn.model_selection import KFold
-from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import f1_score
 from sklearn.base import BaseEstimator, ClassifierMixin
 import machine_learning
-from scipy.stats import mode
+from statistics import mode
 
 import os
 os.environ['OMP_NUM_THREADS'] = '1'
@@ -16,17 +16,34 @@ class HMM(ClassifierMixin, BaseEstimator):
     def __init__(self, model_arcitechture):
         self.model_arcitechture = model_arcitechture
         self.models = {}
+        self.feature_importances_ = []
 
+    # Find weights of the features, to find which are most important
+    def compute_feature_importance(self, X, y,lengths):
+        base_score = self.score(X,y)
+        n_features = X.shape[1]
+        importances = []
+        for i in range(n_features):
+            X_reduced = np.delete(X, i, axis=1)
+            self.fit(X_reduced,y,lengths,False)
+            reduced_score = self.score(X_reduced,y)
+            importances.append(base_score - reduced_score)
+        self.feature_importances_ = np.array(importances)
+        print(self.feature_importances_)
+    
     # Fit HMM model to given training data and parameters
     # X on format (n_samples,) where each sample is of length (n_features)
-    def fit(self, X, y, lengths = None):
+    def fit(self, X, y, lengths = None, calculate_importance = True):
         self.classes = np.unique(y)
         for class_label in self.classes:
             [n_c, n_m] = self.model_arcitechture[class_label]
             model = GMMHMM(n_components=n_c,n_mix=n_m,algorithm="viterbi")
             class_data = [X[idx] for idx in range(len(y)) if y[idx] == class_label]
-            model.fit(class_data, lengths[class_label])
+            length = None if lengths is None else lengths[class_label]
+            model.fit(class_data, length)
             self.models[class_label] = model
+        if calculate_importance:
+            self.compute_feature_importance(X, y, lengths)
         return self
     
     # Predicts value for segment
@@ -70,7 +87,10 @@ class HMM(ClassifierMixin, BaseEstimator):
         original_format_data, original_format_label = split_test_data(X,y,lengths)
         segments_data, segments_labels = segment_data(original_format_data,original_format_label,segment_parameter)
         segments_predictions = self._predict_segments(segments_data,X.shape[1])
-        return accuracy_score(segments_labels, segments_predictions)
+        segments_labels_concatenated = np.concatenate(segments_labels, axis=0)
+        segments_predictions_concatenated = np.concatenate(segments_predictions,axis=0)
+        f1 = f1_score(y_true=segments_labels_concatenated, y_pred=segments_predictions_concatenated, average='macro')
+        return f1
 
 # Segments data into different segments for testing
 # Data is in format (n_recordings, n_segments, n_features)
@@ -88,7 +108,7 @@ def segment_data(data, labels = None , n_segments = 50, step_size = 1):
             # Majority voting for the separate segments
             if labels != None:
                 # Extract most common label for the entire segment and use as label
-                labels_segment = mode(labels[i][segment_start_idx:(segment_start_idx+n_segments)],keepdims=False).mode
+                labels_segment = int(mode(labels[i][segment_start_idx:(segment_start_idx+n_segments)]))
                 recording_segmented_labels.append(labels_segment)
         segmented_data.append(recording_segmented_data)
         segmented_labels.append(recording_segmented_labels)
@@ -140,13 +160,13 @@ def split_test_data(concatenated_data, concatenated_labels = None, lengths = Non
 
     if lengths is None:
         data_split.append(concatenated_data)
-        if concatenated_labels:
+        if concatenated_labels.any():
             labels_split.append(concatenated_labels)
     else:
         for length in lengths:
             end = start + length
             data_split.append(concatenated_data[start:end])
-            if concatenated_labels:
+            if concatenated_labels is not None:
                 labels_split.append(concatenated_labels[start:end])
             start = end
     return data_split, labels_split

@@ -37,7 +37,7 @@ class RNN:
 def train_test(train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids,test_name,segment_parameters):
     classifier = RNN()
     train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
-    classifier.train(train_data, train_labels)
+    classifier.fit(train_data, train_labels)
 
     predictions = []
     predictions_proba = []
