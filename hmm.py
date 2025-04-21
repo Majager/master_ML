@@ -33,7 +33,7 @@ class HMM(ClassifierMixin, BaseEstimator):
     
     # Fit HMM model to given training data and parameters
     # X on format (n_samples,) where each sample is of length (n_features)
-    def fit(self, X, y, lengths = None, calculate_importance = True):
+    def fit(self, X, y, lengths = None, calculate_importance = False):
         self.classes = np.unique(y)
         for class_label in self.classes:
             [n_c, n_m] = self.model_arcitechture[class_label]
