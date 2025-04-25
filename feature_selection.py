@@ -1,31 +1,70 @@
-from sklearn.feature_selection import RFECV, RFE
+from sklearn.feature_selection import RFECV, RFE, SequentialFeatureSelector, mutual_info_classif
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import numpy as np
 import hmm
+import matplotlib.pyplot as plt
 
-def feature_selection_CV(estimator,features,labels):
-    selector = RFECV(estimator,step=1,cv=3)
-    train_data, train_labels = np.concatenate(features,axis=0), np.concatenate(labels,axis=0)
+def RFE_CV(estimator,train_data,train_labels):
+    selector = RFECV(estimator,step=1,cv=5)
     selector = selector.fit(train_data,train_labels)
-    return selector.ranking_, selector.support_
+    return selector.ranking_, selector.cv_results_
 
-def feature_selection(estimator,features,labels):
-    selector = RFE(estimator,step=2)
-    train_data, train_labels = np.concatenate(features,axis=0), np.concatenate(labels,axis=0)
+def RFE_selection(estimator,train_data,train_labels):
+    selector = RFE(estimator,step=1,n_features_to_select=1)
     selector = selector.fit(train_data,train_labels)
-    return selector.ranking_, selector.support_
+    return selector.ranking_
+
+def SequentialFeatureSelection(estimator, train_data,train_labels):
+    selector = SequentialFeatureSelector(estimator,cv=5)
+    selector = selector.fit(train_data,train_labels)
+    return selector.support_
 
 def feature_selection_LDA(features,labels):
-    estimator = LinearDiscriminantAnalysis()
-    features_LDA, features_LDA_include = feature_selection_CV(estimator,features,labels)
-    print("Feature selection LDA")
-    print(features_LDA)
-    print(features_LDA_include)
+    # Merge features as 1 vector
+    train_data, train_labels = np.concatenate(features,axis=0), np.concatenate(labels,axis=0)
+    
+    # Mutual information
+    # print("Feature selection with mutual information")
+    # importance_mutual_information = mutual_info_classif(train_data,train_labels)
+    # print(importance_mutual_information)
 
+    # RFE
+    estimator_RFE = LinearDiscriminantAnalysis()
+    importance_RFE = RFE_selection(estimator_RFE,train_data,train_labels)
+    print("Feature selection LDA with RFE")
+    print(importance_RFE)
+
+    # RFE CV 
+    # estimator_RFECV = LinearDiscriminantAnalysis()
+    # importance_RFECV, importance_RFECV_results = RFE_CV(estimator_RFECV,train_data,train_labels)
+    # print("Feature selection LDA with RFE CV")
+    # print(importance_RFECV)
+    # plt.figure()
+    # plt.plot(importance_RFECV_results['n_features'],importance_RFECV_results['mean_test_score'])
+    # plt.fill_between(importance_RFECV_results['n_features'],importance_RFECV_results['mean_test_score']-importance_RFECV_results['std_test_score'],importance_RFECV_results['mean_test_score']+importance_RFECV_results['std_test_score'],alpha=0.2)
+    # plt.xlabel('Number of selected features')
+    # plt.ylabel('True')
+    # plt.title('Performance of LDA')
+    # plt.grid(True)
+    # plt.show()
+
+    # Sequential Feature Selector
+    print("Feature selection LDA with Forward selection")
+    importance_sfs = np.zeros(train_data.shape[1],dtype=int)
+    estimator_sfs = LinearDiscriminantAnalysis()
+    for i in range(len(importance_sfs)):
+        selector = SequentialFeatureSelector(estimator_sfs,cv=3,n_features_to_select=i+1)
+        selector = selector.fit(train_data,train_labels)
+        indices = selector.get_support(indices=True)
+        for j in indices:
+            if importance_sfs[j]==0:
+               importance_sfs[j] = i+1
+        print(importance_sfs) 
+        
 def feature_selection_HMM(features,labels, model_arcitechture):
+    train_data, train_labels = np.concatenate(features,axis=0), np.concatenate(labels,axis=0)
     estimator = hmm.HMM(model_arcitechture)
-    features_HMM, features_HMM_include = feature_selection(estimator,features,labels)
+    features_HMM = RFE_selection(estimator,train_data,train_labels)
     print("Feature selection HMM")
     print(features_HMM)
-    print(features_HMM_include)
     

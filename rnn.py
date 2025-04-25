@@ -4,7 +4,8 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import numpy as np
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.metrics import BinaryAccuracy, Precision, Recall
 import datetime
 import pickle
 import machine_learning
@@ -20,10 +21,15 @@ class RNN:
             Dense(10, activation='relu'),
             Dense(1, activation='sigmoid')  # Binary classification
         ])
-        self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        self.patience = EarlyStopping(
+            monitor='val_loss',
+            patience=5,
+            restore_best_weights=True,
+        )
+        self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=[BinaryAccuracy(),Precision(),Recall()])
 
     def fit(self, X, y, batch_size=32, epochs=20, validation_split=0.2):
-        self.history = self.model.fit(X, y, batch_size=batch_size, epochs=epochs, validation_split=validation_split)
+        self.history = self.model.fit(X, y, batch_size=batch_size, epochs=epochs, validation_split=validation_split,callbacks=[self.patience])
 
     def evaluate(self, X, y):
         return self.model.evaluate(X, y)

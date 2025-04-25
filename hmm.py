@@ -17,19 +17,6 @@ class HMM(ClassifierMixin, BaseEstimator):
         self.model_arcitechture = model_arcitechture
         self.models = {}
         self.feature_importances_ = []
-
-    # Find weights of the features, to find which are most important
-    def compute_feature_importance(self, X, y,lengths):
-        base_score = self.score(X,y)
-        n_features = X.shape[1]
-        importances = []
-        for i in range(n_features):
-            X_reduced = np.delete(X, i, axis=1)
-            self.fit(X_reduced,y,lengths,False)
-            reduced_score = self.score(X_reduced,y)
-            importances.append(base_score - reduced_score)
-        self.feature_importances_ = np.array(importances)
-        print(self.feature_importances_)
     
     # Fit HMM model to given training data and parameters
     # X on format (n_samples,) where each sample is of length (n_features)
@@ -42,8 +29,6 @@ class HMM(ClassifierMixin, BaseEstimator):
             length = None if lengths is None else lengths[class_label]
             model.fit(class_data, length)
             self.models[class_label] = model
-        if calculate_importance:
-            self.compute_feature_importance(X, y, lengths)
         return self
     
     # Predicts value for segment
