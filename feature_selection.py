@@ -3,6 +3,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import numpy as np
 import hmm
 import matplotlib.pyplot as plt
+import pickle
 
 def RFE_CV(estimator,train_data,train_labels):
     selector = RFECV(estimator,step=1,cv=5)
@@ -23,12 +24,12 @@ def feature_selection_LDA(features,labels):
     # Merge features as 1 vector
     train_data, train_labels = np.concatenate(features,axis=0), np.concatenate(labels,axis=0)
     
-    # Mutual information
-    # print("Feature selection with mutual information")
-    # importance_mutual_information = mutual_info_classif(train_data,train_labels)
-    # print(importance_mutual_information)
+    # Mutual information as a filter method
+    print("Feature selection with mutual information")
+    importance_mutual_information = mutual_info_classif(train_data,train_labels)
+    print(importance_mutual_information)
 
-    # RFE
+    # RFE as an embedded method
     estimator_RFE = LinearDiscriminantAnalysis()
     importance_RFE = RFE_selection(estimator_RFE,train_data,train_labels)
     print("Feature selection LDA with RFE")
@@ -48,18 +49,22 @@ def feature_selection_LDA(features,labels):
     # plt.grid(True)
     # plt.show()
 
-    # Sequential Feature Selector
+    # Sequential Feature Selector as a wrapper method
     print("Feature selection LDA with Forward selection")
     importance_sfs = np.zeros(train_data.shape[1],dtype=int)
     estimator_sfs = LinearDiscriminantAnalysis()
-    for i in range(len(importance_sfs)):
+    for i in range(len(importance_sfs)-1):
         selector = SequentialFeatureSelector(estimator_sfs,cv=3,n_features_to_select=i+1)
         selector = selector.fit(train_data,train_labels)
         indices = selector.get_support(indices=True)
         for j in indices:
             if importance_sfs[j]==0:
                importance_sfs[j] = i+1
-        print(importance_sfs) 
+    print(importance_sfs) 
+
+    # Store features for later use
+    with open(f'LDA_feature_selection.pickle', 'wb') as handle:
+        pickle.dump([importance_mutual_information,importance_RFE,importance_sfs],handle, protocol=pickle.HIGHEST_PROTOCOL)
         
 def feature_selection_HMM(features,labels, model_arcitechture):
     train_data, train_labels = np.concatenate(features,axis=0), np.concatenate(labels,axis=0)
