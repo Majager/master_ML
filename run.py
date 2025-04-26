@@ -29,7 +29,7 @@ def run_test(model,validation_set,test_name,features,labels,recording_ids,model_
         l_predict.train_test(train_data,train_labels,test_data,test_labels)
     # Feature selection LDA
     elif model.upper() == "SELECTION_LDA":
-        feature_selection.feature_selection_LDA(train_data, train_labels)
+        feature_selection.feature_selection_LDA(train_data, train_labels,train_recording_ids)
     elif model.upper() == "SELECTION_HMM":
         feature_selection.feature_selection_HMM(train_data, train_labels, model_arcitechture)
 
