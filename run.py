@@ -31,7 +31,7 @@ def run_test(model,validation_set,test_name,features,labels,recording_ids,model_
     elif model.upper() == "SELECTION_LDA":
         feature_selection.feature_selection_LDA(train_data, train_labels,train_recording_ids)
     elif model.upper() == "SELECTION_HMM":
-        feature_selection.feature_selection_HMM(train_data, train_labels, model_arcitechture)
+        feature_selection.feature_selection_HMM(train_data, train_labels, train_recording_ids, model_arcitechture)
 
     # Hyperparameter optimization
     #rnn_hyperparamater_optimization.run_rnn_hyperparameters_search(train_data,train_labels,train_recording_ids,test_name,[segment_length,overlap_length,n_segments])
