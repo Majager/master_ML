@@ -1,5 +1,6 @@
 from sklearn.feature_selection import RFECV, RFE, SequentialFeatureSelector, mutual_info_classif
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from mlxtend.feature_selection import SequentialFeatureSelector
 import numpy as np
 import hmm
 import matplotlib.pyplot as plt
@@ -16,11 +17,6 @@ def RFE_selection(estimator,train_data,train_labels):
     selector = selector.fit(train_data,train_labels)
     return selector.ranking_
 
-def SequentialFeatureSelection(estimator, train_data,train_labels):
-    selector = SequentialFeatureSelector(estimator,cv=5,scoring='f1_macro')
-    selector = selector.fit(train_data,train_labels)
-    return selector.support_
-
 def feature_selection_LDA_algorithms(features,labels):
     # Merge features as 1 vector
     train_data, train_labels = np.concatenate(features,axis=0), np.concatenate(labels,axis=0)
@@ -28,7 +24,8 @@ def feature_selection_LDA_algorithms(features,labels):
     # Mutual information as a filter method
     print("Feature selection with mutual information")
     importance_mutual_information = mutual_info_classif(train_data,train_labels)
-    print(importance_mutual_information)
+    importance_mutual_information_ranks = convert_mutual_information(importance_mutual_information)
+    print(importance_mutual_information_ranks)
 
     # RFE as an embedded method
     estimator_RFE = LinearDiscriminantAnalysis()
@@ -36,30 +33,53 @@ def feature_selection_LDA_algorithms(features,labels):
     print("Feature selection LDA with RFE")
     print(importance_RFE)
 
-    # Sequential Feature Selector as a wrapper method
+    # # Sequential Feature Selector as a wrapper method
     print("Feature selection LDA with Forward selection")
     importance_sfs = np.zeros(train_data.shape[1],dtype=int)
     estimator_sfs = LinearDiscriminantAnalysis()
-    for i in range(len(importance_sfs)-1):
-        selector = SequentialFeatureSelector(estimator_sfs,cv=3,n_features_to_select=i+1)
-        selector = selector.fit(train_data,train_labels)
-        indices = selector.get_support(indices=True)
-        for j in indices:
-            if importance_sfs[j]==0:
-               importance_sfs[j] = i+1
-    print(importance_sfs) 
+    selector = SequentialFeatureSelector(estimator_sfs,k_features=len(importance_sfs)-1,cv=5,n_jobs=-1,scoring='f1_macro')
+    selector = selector.fit(train_data,train_labels)
+    for i in range(1,len(selector.subsets_)+1):
+        indices = selector.subsets_[i]['feature_idx']
+        for j in indices: 
+            if importance_sfs[j] == 0:
+                importance_sfs[j] = i
+    for i in range(len(importance_sfs)):
+        if importance_sfs[i] == 0:
+            importance_sfs[i] = len(importance_sfs)
+    print(importance_sfs)
 
     # Store features for later use
-    with open(f'LDA_feature_selection.pickle', 'wb') as handle:
-        pickle.dump([importance_mutual_information,importance_RFE,importance_sfs],handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(f'feature_selection_LDA.pickle', 'wb') as handle:
+        pickle.dump([importance_mutual_information_ranks,importance_RFE,importance_sfs],handle, protocol=pickle.HIGHEST_PROTOCOL)
         
 def feature_selection_HMM_algorithms(features,labels, model_arcitechture):
     train_data, train_labels = np.concatenate(features,axis=0), np.concatenate(labels,axis=0)
-    estimator = hmm.HMM(model_arcitechture)
-    features_HMM = RFE_selection(estimator,train_data,train_labels)
-    print("Feature selection HMM")
-    print(features_HMM)
 
+    # Mutual information as a filter method
+    print("Feature selection with mutual information")
+    importance_mutual_information = mutual_info_classif(train_data,train_labels)
+    importance_mutual_information_ranks = convert_mutual_information(importance_mutual_information)
+    print(importance_mutual_information_ranks)
+
+    importance_sfs = np.zeros(train_data.shape[1],dtype=int)
+    estimator = hmm.HMM(model_arcitechture)
+    selector = SequentialFeatureSelector(estimator,k_features=len(importance_sfs)-1,cv=5,n_jobs=-1,scoring = hmm.custom_score)
+    selector = selector.fit(train_data,train_labels)
+    for i in range(1,len(selector.subsets_)+1):
+        indices = selector.subsets_[i]['feature_idx']
+        for j in indices: 
+            if importance_sfs[j] == 0:
+                importance_sfs[j] = i
+    for i in range(len(importance_sfs)):
+        if importance_sfs[i] == 0:
+            importance_sfs[i] = len(importance_sfs)
+    print(importance_sfs)
+
+    # Store features for later use
+    with open(f'feature_selection_HMM.pickle', 'wb') as handle:
+        pickle.dump([importance_mutual_information_ranks, importance_sfs],handle, protocol=pickle.HIGHEST_PROTOCOL)
+    
 def extract_selected_features(data,indices):
     num_subjects = len(data)
     features = np.empty(num_subjects,dtype=object)
@@ -117,18 +137,19 @@ def convert_mutual_information(mutual_information):
         mutual_information_copy[max_idx] = rank_given
     return ranks
 
-def feature_selection_LDA(features,labels,recording_ids):    
+def feature_selection_LDA(features,labels,recording_ids):
+    #feature_selection_LDA_algorithms(features,labels) 
+
     importance_mutual_information, importance_RFE, importance_sfs = [],[],[]
     # Extract features from previous calculations
-    with open(f'LDA_feature_selection.pickle', 'rb') as handle:
+    with open(f'feature_selection_LDA.pickle', 'rb') as handle:
         importance_mutual_information, importance_RFE, importance_sfs = pickle.load(handle)
+     
+    feature_selection_LDA_base(importance_mutual_information,features,labels,recording_ids,f"mutual_information_LDA\\run_{11}")
     
-    importance_mutual_information_ranks = convert_mutual_information(importance_mutual_information)  
-    feature_selection_LDA_base(importance_mutual_information_ranks,features,labels,recording_ids,"mutual_information_LDA")
+    feature_selection_LDA_base(importance_RFE,features,labels,recording_ids,f"RFE_LDA\\run_{11}")
     
-    feature_selection_LDA_base(importance_RFE,features,labels,recording_ids,"RFE_LDA")
-    
-    feature_selection_LDA_base(importance_sfs,features,labels,recording_ids,"sfs_LDA")
+    feature_selection_LDA_base(importance_sfs,features,labels,recording_ids,f"sfs_LDA\\run_{11}")
 
 def feature_selection_HMM_base(importance,features,labels,recording_ids,test_name,model_arcitechture):
     max_value = np.max(importance)
@@ -159,12 +180,13 @@ def feature_selection_HMM_base(importance,features,labels,recording_ids,test_nam
     machine_learning.store_parameters(test_name, values)
 
 def feature_selection_HMM(features,labels,recording_ids,model_arcitechture):    
-    importance_mutual_information, importance_RFE, importance_sfs = [],[],[]
+    #feature_selection_HMM_algorithms(features,labels,model_arcitechture)
+
+    importance_mutual_information, importance_sfs = [],[]
     # Extract features from previous calculations
-    with open(f'LDA_feature_selection.pickle', 'rb') as handle:
-        importance_mutual_information, importance_RFE, importance_sfs = pickle.load(handle)
-    
-    importance_mutual_information_ranks = convert_mutual_information(importance_mutual_information)  
-    feature_selection_HMM_base(importance_mutual_information_ranks,features,labels,recording_ids,"mutual_information_HMM",model_arcitechture)
-    
-    feature_selection_HMM_base(importance_RFE,features,labels,recording_ids,"RFE_HMM",model_arcitechture)
+    with open(f'feature_selection_HMM.pickle', 'rb') as handle:
+        importance_mutual_information, importance_sfs = pickle.load(handle)
+
+    for run in range(2,7):
+        feature_selection_HMM_base(importance_mutual_information,features,labels,recording_ids,f"mutual_information_HMM\\run_{run}",model_arcitechture)
+        feature_selection_HMM_base(importance_sfs,features,labels,recording_ids,f"sfs_HMM\\run_{run}",model_arcitechture)

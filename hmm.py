@@ -17,6 +17,7 @@ class HMM(ClassifierMixin, BaseEstimator):
         self.model_arcitechture = model_arcitechture
         self.models = {}
         self.feature_importances_ = []
+        self.classes_ = []
 
     # Find weights of the features, to find which are most important
     def compute_feature_importance(self, X, y,lengths):
@@ -33,17 +34,15 @@ class HMM(ClassifierMixin, BaseEstimator):
     
     # Fit HMM model to given training data and parameters
     # X on format (n_samples,) where each sample is of length (n_features)
-    def fit(self, X, y, lengths = None, calculate_importance=False):
-        self.classes = np.unique(y)
-        for class_label in self.classes:
+    def fit(self, X, y, lengths = None):
+        self.classes_ = np.unique(y)
+        for class_label in self.classes_:
             [n_c, n_m] = self.model_arcitechture[class_label]
             model = GMMHMM(n_components=n_c,n_mix=n_m,algorithm="viterbi")
             class_data = [X[idx] for idx in range(len(y)) if y[idx] == class_label]
             length = None if lengths is None else lengths[class_label]
             model.fit(class_data, length)
             self.models[class_label] = model
-        if calculate_importance:
-            self.compute_feature_importance(X, y, lengths)
         return self
     
     # Predicts value for segment
@@ -91,6 +90,9 @@ class HMM(ClassifierMixin, BaseEstimator):
         segments_predictions_concatenated = np.concatenate(segments_predictions,axis=0)
         f1 = f1_score(y_true=segments_labels_concatenated, y_pred=segments_predictions_concatenated, average='macro')
         return f1
+    
+def custom_score(estimator,X,y):
+    return estimator.score(X,y)
 
 # Segments data into different segments for testing
 # Data is in format (n_recordings, n_segments, n_features)
