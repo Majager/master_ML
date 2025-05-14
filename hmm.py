@@ -121,28 +121,27 @@ def segment_data(data, labels = None , n_segments = 50, step_size = 1):
 # X should be the feature matrix of individual samples, with shape (n_samples, n_features)
 # lengths represents length of the individual sequences and sums to n_samples, with shape (n_sequences,)
 def prepare_train_data(data, labels):
-    meal_lengths = []
-    nonmeal_lengths = []
-
-    for idx, recording_data in enumerate(data):
-        meal_found, idx_meal_start, idx_meal_end = False, 0, -1
-        for idx_segment, segment in enumerate(labels[idx]):
-            if (segment == 1 and meal_found == False):
-                idx_meal_start = idx_segment
-                meal_found = True
-            elif (segment == 0 and meal_found == True):
-                idx_meal_end = idx_segment
-                break
-        if meal_found == True:
-            meal_lengths.append(idx_meal_end-idx_meal_start)
-            nonmeal_lengths.append(idx_meal_start)
-            nonmeal_lengths.append(len(recording_data)-idx_meal_end)
-        else:
-            nonmeal_lengths.append(len(recording_data))
-
+    lengths = {}
+    for recording_labels in labels:
+        current_length = 1
+        current_class = recording_labels[0]
+        for segment_class in recording_labels:
+            if segment_class == current_class:
+                current_length += 1
+            else:
+                # Store class_length
+                if current_class not in lengths:
+                    lengths[current_class] = []
+                lengths[current_class].append(current_length)
+                # Reset for new class
+                current_class = segment_class
+                current_length = 1
+        if current_class not in lengths:
+            lengths[current_class] = []
+        lengths[current_class].append(current_length)
     concatenated_data = np.vstack(np.concatenate(data,axis=0))
     concatenated_labels = np.vstack(np.concatenate(labels,axis=0))
-    return concatenated_data, concatenated_labels, [nonmeal_lengths,meal_lengths]
+    return concatenated_data, concatenated_labels, lengths
 
 # Prepare data for format to be used in HMM model
 # X should be the feature matrix of individual samples, with shape (n_samples, n_features)

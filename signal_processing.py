@@ -73,7 +73,9 @@ def convert_to_features(data_segments, sr, n_fft, hop_length,n_mfcc):
         # Frequency domain features
         mel_spectrogram = librosa.feature.melspectrogram(y = data_segments[i], sr = sr, n_fft = n_fft, hop_length = hop_length)
         db_spectrogram = librosa.power_to_db(mel_spectrogram, ref = np.max)
-        MFCC = librosa.feature.mfcc(S=db_spectrogram,sr=sr,n_mfcc=n_mfcc)
+        mfcc = librosa.feature.mfcc(S=db_spectrogram,sr=sr,n_mfcc=n_mfcc)
+        mfcc_delta = librosa.feature.delta(mfcc)
+        mfcc_delta2 = librosa.feature.delta(mfcc, order=2)
         spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft))
         spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft)) 
         spectral_contrast = np.mean(librosa.feature.spectral_contrast(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft))
@@ -81,7 +83,10 @@ def convert_to_features(data_segments, sr, n_fft, hop_length,n_mfcc):
         spectral_flatness = np.mean(librosa.feature.spectral_flatness(y=data_segments[i],hop_length=hop_length,n_fft=n_fft))
         
         features_segment = [zero_crossings_rate, rms_energy, spectral_centroid, spectral_bandwidth, spectral_contrast, spectral_rolloff, spectral_flatness]
-        features_segment.extend(np.mean(MFCC, axis=1))
+        features_segment.extend(np.mean(mfcc, axis=1))
+        features_segment.extend(np.mean(mfcc_delta, axis=1))
+        features_segment.extend(np.mean(mfcc_delta2, axis=1))
+
         features.append(features_segment)
     
     features = np.array(features, dtype=np.float32)
@@ -108,7 +113,7 @@ def notch_filter(data,sr,notch_freq=50,quality_factor=30):
     return scipy.signal.filtfilt(b,a,data)
 
 # Feature extraction 
-def feature_extraction(file_paths, meta_data_files, file_ids, position, segment_length, overlap_length, sr, n_fft, hop_length, n_mfcc, update_features = True):
+def feature_extraction(file_paths, meta_data_files, file_ids, position, segment_length, overlap_length, sr, n_fft, hop_length, n_mfcc, update_features = True, multiclass = False):
     features = []
     labels = []
     recording_ids = []
@@ -147,9 +152,14 @@ def feature_extraction(file_paths, meta_data_files, file_ids, position, segment_
         with open(f'features_{position}_{segment_length}.pickle', 'wb') as handle:
             pickle.dump([features,labels, recording_ids],handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
-        # Extract features from previous calculations
-        with open(f'features_{position}_{segment_length}.pickle', 'rb') as handle:
-            features,labels, recording_ids = pickle.load(handle)
+        if multiclass:
+            # Extract features from previous calculations
+            with open(f'features_{position}_{segment_length}_multiclass.pickle', 'rb') as handle:
+                features,labels, recording_ids = pickle.load(handle)
+        else: 
+            # Extract features from previous calculations
+            with open(f'features_{position}_{segment_length}.pickle', 'rb') as handle:
+                features,labels, recording_ids = pickle.load(handle)
     
     return features,labels, recording_ids
 

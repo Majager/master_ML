@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import json
+from statistics import mode
 
 # Split the data set into first and second set based on indices
 def split_data(data,labels,recording_ids,second_indices):
@@ -39,8 +40,8 @@ def segment_labels(true, predictions, predictions_proba, segment_size):
         subject_segmented_predictions_proba = []
         for j in range(0,len(true[i])-segment_size):
             # Majority voting for the separate segments
-            subsequence_true = round(np.mean(true[i][j:(j+segment_size)]))
-            subsequence_predictions = round(np.mean(predictions[i][j:(j+segment_size)]))
+            subsequence_true = int(mode(true[i][j:(j+segment_size)]))
+            subsequence_predictions = int(mode(predictions[i][j:(j+segment_size)]))
             subsequence_predictions_proba = round(np.mean(predictions_proba[i][j:(j+segment_size)]))
             subject_segmented_true.append(subsequence_true)
             subject_segmented_predictions.append(subsequence_predictions)

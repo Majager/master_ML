@@ -17,12 +17,14 @@ def main():
     n_components_nonmeal = 7    # Number of hidden states in the model for nonmeal model
     n_segments = 70             # Number of segments in a sub sequence for testing
     update_features = False     # Bool of whether or not to update features, or use previous result from function
-    model = "selection_HMM"               # Machine learning method to use, LDA/HMM/RNN/L_P
+    model = "selection_LDA"               # Machine learning method to use, LDA/HMM/RNN/L_P
     validation_set = True       # True tests on validation set, while False uses test set
+    multiclass = False           # Several classes/ meal and non-meal
 
     # Generate test name based on parameters
     suffix = "validation" if validation_set else "test" 
-    test_name = f"{model}_{suffix}"
+    multiclass_suffix ="_multiclass" if multiclass else ""
+    test_name = f"{model}_{suffix}{multiclass_suffix}"
     
     # Find recorded data
     root_folder_path = 'C:\\Users\\MajaE\\src\\repos\\master_ML\\Data'
@@ -30,8 +32,8 @@ def main():
     wav_files, metadata_files, file_ids = file_convert.find_data(root_folder_path,position)
     
     # Feature extraction from recorded data
-    features, labels, recording_ids = signal_processing.feature_extraction(wav_files, metadata_files, file_ids, position, segment_length, overlap_length, sr,n_fft,hop_length,n_mfcc,update_features)
+    features, labels, recording_ids = signal_processing.feature_extraction(wav_files, metadata_files, file_ids, position, segment_length, overlap_length, sr,n_fft,hop_length,n_mfcc,update_features,multiclass)
     
-    run.run_test(model,validation_set,test_name,features,labels,recording_ids,{0:[n_components_nonmeal, n_mix_nonmeal], 1:[n_components_meal, n_mix_meal]},[segment_length,overlap_length,n_segments])
+    run.run_test(model,validation_set,test_name,features,labels,recording_ids,{0:[n_components_nonmeal, n_mix_nonmeal], 1:[n_components_meal, n_mix_meal], 2:[n_components_nonmeal, n_mix_nonmeal]},[segment_length,overlap_length,n_segments])
     
 main()

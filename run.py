@@ -4,10 +4,11 @@ import hmm
 import rnn
 import l_predict
 import feature_selection
+import hyperparameter_optimization
 
 def run_test(model,validation_set,test_name,features,labels,recording_ids,model_arcitechture,segment_parameters):
     # Running machine learning on features
-    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[2,5,21,22,28,32,39,44,46])
+    train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids = machine_learning.split_data(features,labels,recording_ids,[1,4,20,21,27,31,38,43,45])
     
     # LDA
     if model.upper() == "LDA":
@@ -32,7 +33,5 @@ def run_test(model,validation_set,test_name,features,labels,recording_ids,model_
         feature_selection.feature_selection_LDA(train_data, train_labels,train_recording_ids)
     elif model.upper() == "SELECTION_HMM":
         feature_selection.feature_selection_HMM(train_data, train_labels, train_recording_ids, model_arcitechture)
-
-    # Hyperparameter optimization
-    #rnn_hyperparamater_optimization.run_rnn_hyperparameters_search(train_data,train_labels,train_recording_ids,test_name,[segment_length,overlap_length,n_segments])
-    
+    elif model.upper() == "OPTIMIZATION_HMM":
+        hyperparameter_optimization.hyperparameter_optimization_HMM(train_data,train_labels,train_recording_ids)
