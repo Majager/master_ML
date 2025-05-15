@@ -56,7 +56,7 @@ def convert_to_MFCCs(data_segments, sr, n_fft, hop_length,n_mfcc):
 # Extract features
 # zero_crossings: measures noisiness
 # rms_energy: measures loudness over time
-# mfcc:  extract frequency bands over time
+# mfcc:  extract frequency bands over time, delta, delta delta
 # spectral_centroid: determines brightness
 # spectral_bandwidth: determines spread of frequencies
 # spectral contrast: 
@@ -74,8 +74,8 @@ def convert_to_features(data_segments, sr, n_fft, hop_length,n_mfcc):
         mel_spectrogram = librosa.feature.melspectrogram(y = data_segments[i], sr = sr, n_fft = n_fft, hop_length = hop_length)
         db_spectrogram = librosa.power_to_db(mel_spectrogram, ref = np.max)
         mfcc = librosa.feature.mfcc(S=db_spectrogram,sr=sr,n_mfcc=n_mfcc)
-        mfcc_delta = librosa.feature.delta(mfcc)
-        mfcc_delta2 = librosa.feature.delta(mfcc, order=2)
+        #mfcc_delta = librosa.feature.delta(mfcc)
+        #mfcc_delta2 = librosa.feature.delta(mfcc, order=2)
         spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft))
         spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft)) 
         spectral_contrast = np.mean(librosa.feature.spectral_contrast(y=data_segments[i],sr=sr,hop_length=hop_length,n_fft=n_fft))
@@ -84,8 +84,8 @@ def convert_to_features(data_segments, sr, n_fft, hop_length,n_mfcc):
         
         features_segment = [zero_crossings_rate, rms_energy, spectral_centroid, spectral_bandwidth, spectral_contrast, spectral_rolloff, spectral_flatness]
         features_segment.extend(np.mean(mfcc, axis=1))
-        features_segment.extend(np.mean(mfcc_delta, axis=1))
-        features_segment.extend(np.mean(mfcc_delta2, axis=1))
+        #features_segment.extend(np.mean(mfcc_delta, axis=1))
+        #features_segment.extend(np.mean(mfcc_delta2, axis=1))
 
         features.append(features_segment)
     

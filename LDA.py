@@ -35,7 +35,7 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
             predictions_proba.append(classifier.predict_proba(validation_data[idx]))
 
         for idx, segment_size in enumerate(segment_sizes):
-            true_segmented, predictions_segmented, predictions_segmented_proba = machine_learning.segment_labels(validation_labels,predictions,predictions_proba,segment_parameters[2])
+            true_segmented, predictions_segmented, predictions_segmented_proba = machine_learning.segment_labels(validation_labels,predictions,predictions_proba,segment_size)
      
             segment_parameters[2]=segment_size
         

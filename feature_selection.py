@@ -147,7 +147,7 @@ def convert_mutual_information(mutual_information):
     return ranks
 
 def feature_selection_LDA(features,labels,recording_ids):
-    feature_selection_LDA_algorithms(features,labels)
+    #feature_selection_LDA_algorithms(features,labels)
 
     importance_mutual_information, importance_RFE, importance_sfs = [],[],[]
     # Extract features from previous calculations
@@ -155,11 +155,11 @@ def feature_selection_LDA(features,labels,recording_ids):
         importance_mutual_information, importance_RFE, importance_sfs = pickle.load(handle)
 
     for run in range (1,11):
-        feature_selection_LDA_base(importance_mutual_information,features,labels,recording_ids,f"mutual_information_LDA\\run_{11}")
+        feature_selection_LDA_base(importance_mutual_information,features,labels,recording_ids,f"mutual_information_LDA\\run_{run}")
 
-        feature_selection_LDA_base(importance_RFE,features,labels,recording_ids,f"RFE_LDA\\run_{11}")
+        feature_selection_LDA_base(importance_RFE,features,labels,recording_ids,f"RFE_LDA\\run_{run}")
 
-        feature_selection_LDA_base(importance_sfs,features,labels,recording_ids,f"sfs_LDA\\run_{11}")
+        feature_selection_LDA_base(importance_sfs,features,labels,recording_ids,f"sfs_LDA\\run_{run}")
 
 def feature_selection_HMM_base(importance,features,labels,recording_ids,test_name,model_arcitechture):
     max_value = np.max(importance)

@@ -17,7 +17,7 @@ def main():
     n_components_nonmeal = 7    # Number of hidden states in the model for nonmeal model
     n_segments = 70             # Number of segments in a sub sequence for testing
     update_features = False     # Bool of whether or not to update features, or use previous result from function
-    model = "selection_LDA"               # Machine learning method to use, LDA/HMM/RNN/L_P
+    model = "LDA"    # Machine learning method to use, LDA/HMM/RNN/L_P
     validation_set = True       # True tests on validation set, while False uses test set
     multiclass = False           # Several classes/ meal and non-meal
 

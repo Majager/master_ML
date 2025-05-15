@@ -123,7 +123,7 @@ def segment_data(data, labels = None , n_segments = 50, step_size = 1):
 def prepare_train_data(data, labels):
     lengths = {}
     for recording_labels in labels:
-        current_length = 1
+        current_length = 0
         current_class = recording_labels[0]
         for segment_class in recording_labels:
             if segment_class == current_class:
