@@ -200,3 +200,13 @@ def feature_selection_HMM(features,labels,recording_ids,model_arcitechture):
     run = 3
     # feature_selection_HMM_base(importance_mutual_information,features,labels,recording_ids,f"mutual_information_HMM\\run_{run}",model_arcitechture)
     feature_selection_HMM_base(importance_sfs,features,labels,recording_ids,f"sfs_HMM\\run_{run}",model_arcitechture)
+
+def feature_selection_extraction(features,model):
+    if model == "OPTIMIZATION_HMM":
+        model = "HMM"
+
+    selected_features_idx = []
+    with open(f'selected_features_{model}.pickle','rb') as handle:
+        selected_features_idx = pickle.load(handle)[0]
+    features = extract_selected_features(features,selected_features_idx)
+    return features

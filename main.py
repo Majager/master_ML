@@ -2,6 +2,7 @@ import signal_processing
 import file_convert
 import numpy as np
 import run
+import feature_selection
 
 def main():
     # Parameters
@@ -17,7 +18,7 @@ def main():
     n_components_nonmeal = 7    # Number of hidden states in the model for nonmeal model
     n_segments = 70             # Number of segments in a sub sequence for testing
     update_features = False     # Bool of whether or not to update features, or use previous result from function
-    model = "LDA"    # Machine learning method to use, LDA/HMM/RNN/L_P
+    model = "OPTIMIZATION_HMM"    # Machine learning method to use, LDA/HMM/RNN/L_P
     validation_set = True       # True tests on validation set, while False uses test set
     multiclass = False           # Several classes/ meal and non-meal
 
@@ -34,6 +35,10 @@ def main():
     # Feature extraction from recorded data
     features, labels, recording_ids = signal_processing.feature_extraction(wav_files, metadata_files, file_ids, position, segment_length, overlap_length, sr,n_fft,hop_length,n_mfcc,update_features,multiclass)
     
-    run.run_test(model,validation_set,test_name,features,labels,recording_ids,{0:[n_components_nonmeal, n_mix_nonmeal], 1:[n_components_meal, n_mix_meal], 2:[n_components_nonmeal, n_mix_nonmeal]},[segment_length,overlap_length,n_segments])
+    # Feature selection
+    features = feature_selection.feature_selection_extraction(features,model)
+
+    # Run test
+    run.run_test(model,validation_set,test_name,features,labels,recording_ids,{0:[n_components_nonmeal, n_mix_nonmeal], 1:[n_components_meal, n_mix_meal]},[segment_length,overlap_length,n_segments])
     
 main()

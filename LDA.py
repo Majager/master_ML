@@ -10,12 +10,8 @@ import machine_learning
 
 # Function to create the LDA model
 def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment_parameters): #k_folds
-    # Timestamp of cross-validation
-    segment_sizes = [1,10,20,30,40,50,60,70,80,90,100]
-    timestamp = []
-    for i in range (len(segment_sizes)):
-        timestamp.append(datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
-        time.sleep(1)
+    segment_parameters[2] = 1
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Cross-validation loop to be able to average over all folds
     kfold = KFold(n_splits=10, shuffle=True)
@@ -34,23 +30,17 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
             predictions.append(classifier.predict(validation_data[idx]))
             predictions_proba.append(classifier.predict_proba(validation_data[idx]))
 
-        for idx, segment_size in enumerate(segment_sizes):
-            true_segmented, predictions_segmented, predictions_segmented_proba = machine_learning.segment_labels(validation_labels,predictions,predictions_proba,segment_size)
-     
-            segment_parameters[2]=segment_size
-        
-            # Store results to pickle file
-            r_path = machine_learning.store_results_filename(test_name,timestamp[idx])
-            full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
-            with open(full_path,'wb') as handle:
-                pickle.dump([true_segmented,predictions_segmented,predictions_segmented_proba,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)            
-                print("Parameter done", segment_size)
-            time.sleep(2)
+        # Store results to pickle file
+        r_path = machine_learning.store_results_filename(test_name,timestamp)
+        full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
+        with open(full_path,'wb') as handle:
+            pickle.dump([validation_labels,predictions,predictions_proba,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)            
+        time.sleep(2)
     
-    machine_learning.store_parameters(test_name, segment_sizes)
-    
+    machine_learning.store_parameters(test_name, ["test"])
 
 def train_test(train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids,test_name,segment_parameters):
+    segment_parameters[2] = 1
     classifier = LinearDiscriminantAnalysis()
     train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
     classifier.fit(train_data, train_labels)
@@ -63,12 +53,10 @@ def train_test(train_data, train_labels, train_recording_ids, test_data, test_la
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    true_segmented, predictions_segmented, predictions_segmented_proba = machine_learning.segment_labels(test_labels,predictions,predictions_proba,segment_parameters[2])
-            
     # Store results to pickle file
     r_path = machine_learning.store_results_filename(test_name,timestamp)
     full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
-        pickle.dump([true_segmented,predictions_segmented,predictions_segmented_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump([test_labels,predictions,predictions_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
     
     machine_learning.store_parameters(test_name, ["test"])
