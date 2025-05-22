@@ -44,6 +44,6 @@ def hyperparameter_optimization_HMM(features,labels,recording_ids):
     print("Best score:", search.best_score_)
 
     cv_results_df = pd.DataFrame(search.cv_results_)
-    cv_results_df.to_csv(f"Results\\cv_results_23_features.csv", index=False)
+    cv_results_df.to_csv(f"Results\\cv_results_14_features_2.csv", index=False)
 
 
