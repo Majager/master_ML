@@ -35,3 +35,6 @@ def run_test(model,validation_set,test_name,features,labels,recording_ids,model_
         feature_selection.feature_selection_HMM(train_data, train_labels, train_recording_ids, model_arcitechture)
     elif model.upper() == "OPTIMIZATION_HMM":
         hyperparameter_optimization.hyperparameter_optimization_HMM(train_data,train_labels,train_recording_ids)
+    elif model.upper() == "OPTIMIZATION_LDA":
+        hyperparameter_optimization.hyperparameter_optimization_LDA(train_data,train_labels,train_recording_ids)
+            

@@ -204,6 +204,8 @@ def feature_selection_HMM(features,labels,recording_ids,model_arcitechture):
 def feature_selection_extraction(features,model):
     if model == "OPTIMIZATION_HMM":
         model = "HMM"
+    elif model == "OPTIMIZATION_LDA":
+        model = "LDA"
 
     selected_features_idx = []
     with open(f'selected_features_{model}.pickle','rb') as handle:
