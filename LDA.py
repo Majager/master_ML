@@ -8,8 +8,21 @@ import time
 from sklearn.model_selection import KFold
 import machine_learning
 
+def revert_to_meal_or_nomeal(true, predictions):
+    for recording_idx in range(len(true)):
+        for segment_idx, segment_value in enumerate(true[recording_idx]):
+            if segment_value > 1:
+                true[recording_idx][segment_idx] = 0
+    
+    for recording_idx in range(len(predictions)):
+        for segment_idx, segment_value in enumerate(predictions[recording_idx]):
+            if segment_value > 1:
+                predictions[recording_idx][segment_idx] = 0
+
+    return true,predictions
+        
 # Function to create the LDA model
-def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment_parameters): #k_folds
+def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment_parameters, multiclass): #k_folds
     segment_parameters[2] = 1
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -20,7 +33,7 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
         train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,validation_idx)
         
         # Train LDA
-        classifier = LinearDiscriminantAnalysis()
+        classifier = LinearDiscriminantAnalysis(solver="eigen",shrinkage=0.9)
         train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
         classifier.fit(train_data, train_labels)
 
@@ -29,6 +42,9 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
         for idx in range(len(validation_data)):
             predictions.append(classifier.predict(validation_data[idx]))
             predictions_proba.append(classifier.predict_proba(validation_data[idx]))
+
+        if multiclass:
+            validation_labels,predictions = revert_to_meal_or_nomeal(validation_labels,predictions)
 
         # Store results to pickle file
         r_path = machine_learning.store_results_filename(test_name,timestamp)
@@ -41,7 +57,7 @@ def run_LDA_train_and_validation(data, labels, recording_ids, test_name, segment
 
 def train_test(train_data, train_labels, train_recording_ids, test_data, test_labels, test_recording_ids,test_name,segment_parameters):
     segment_parameters[2] = 1
-    classifier = LinearDiscriminantAnalysis()
+    classifier = LinearDiscriminantAnalysis(solver="eigen",shrinkage=0.9)
     train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
     classifier.fit(train_data, train_labels)
 

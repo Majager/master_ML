@@ -80,6 +80,19 @@ class HMM(ClassifierMixin, BaseEstimator):
 def custom_score(estimator,X,y):
     return estimator.score(X,y)
 
+def revert_to_meal_or_nomeal(true, predictions):
+    for recording_idx in range(len(true)):
+        for segment_idx, segment_value in enumerate(true[recording_idx]):
+            if segment_value > 1:
+                true[recording_idx][segment_idx] = 0
+    
+    for recording_idx in range(len(predictions)):
+        for segment_idx, segment_value in enumerate(predictions[recording_idx]):
+            if segment_value > 1:
+                predictions[recording_idx][segment_idx] = 0
+
+    return true,predictions
+
 # Segments data into different segments for testing
 # Data is in format (n_recordings, n_segments, n_features)
 def segment_data(data, labels = None , n_segments = 50, step_size = 1):
@@ -174,7 +187,7 @@ def test_manager(hmm, data, labels, n_segments = 50):
 
 # Function to create HMM models, train and test
 # segment_parameters in input is given by [segment_length,overlap_length,n_segments]
-def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, model_arcitechture, segment_parameters): #k_folds
+def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, model_arcitechture, segment_parameters, multiclass): #k_folds
     # Timestamp of cross-validation
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -191,6 +204,9 @@ def run_HMM_model_train_and_validation(data, labels, recording_ids, test_name, m
         # Test HMM model based on the validation fold of this iteration
         true, predictions, predictions_proba = test_manager(hmm=hmm,data=validation_data,labels=validation_labels,n_segments=segment_parameters[2])
         
+        if multiclass:
+            true,predictions = revert_to_meal_or_nomeal(true,predictions)
+
         # Store results to pickle file
         r_path = machine_learning.store_results_filename(test_name,timestamp)
         full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
