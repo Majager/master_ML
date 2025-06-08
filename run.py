@@ -37,4 +37,9 @@ def run_test(model,validation_set,test_name,features,labels,recording_ids,model_
         hyperparameter_optimization.hyperparameter_optimization_HMM(train_data,train_labels,train_recording_ids)
     elif model.upper() == "OPTIMIZATION_LDA":
         hyperparameter_optimization.hyperparameter_optimization_LDA(train_data,train_labels,train_recording_ids)
+    elif model.upper() == "PROBABILITY_LDA":
+        LDA.LDA_probability_analysis(train_data,train_labels,train_recording_ids,test_name,segment_parameters, multiclass)
+    elif model.upper() == "PROBABILITY_HMM":
+        hmm.HMM_probability_analysis(train_data,train_labels,train_recording_ids,test_name,model_arcitechture,segment_parameters, multiclass)
+         
             

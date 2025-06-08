@@ -202,9 +202,9 @@ def feature_selection_HMM(features,labels,recording_ids,model_arcitechture):
     feature_selection_HMM_base(importance_sfs,features,labels,recording_ids,f"sfs_HMM\\run_{run}",model_arcitechture)
 
 def feature_selection_extraction(features,model):
-    if model == "OPTIMIZATION_HMM":
+    if model == "OPTIMIZATION_HMM" or model == "PROBABILITY_HMM":
         model = "HMM"
-    elif model == "OPTIMIZATION_LDA":
+    elif model == "OPTIMIZATION_LDA" or model == "PROBABILITY_LDA":
         model = "LDA"
 
     selected_features_idx = []

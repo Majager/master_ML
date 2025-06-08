@@ -18,17 +18,17 @@ def main():
     n_components_nonmeal = 9    # Number of hidden states in the model for nonmeal model
     n_segments = 70             # Number of segments in a sub sequence for testing
     update_features = False     # Bool of whether or not to update features, or use previous result from function
-    model = "HMM"    # Machine learning method to use, LDA/HMM/RNN/L_P
+    model = "PROBABILITY_HMM"    # Machine learning method to use, LDA/HMM/RNN/L_P
     validation_set = True       # True tests on validation set, while False uses test set
-    multiclass = True           # Several classes/ meal and non-meal
+    multiclass = False           # Several classes/ meal and non-meal
 
     # Generate test name based on parameters
     suffix = "validation" if validation_set else "test" 
     multiclass_suffix ="_multiclass" if multiclass else ""
     test_name = f"{model}_{suffix}{multiclass_suffix}"
 
-    #model_architecture = {0:[n_components_nonmeal, n_mix_nonmeal], 1:[n_components_meal, n_mix_meal]}
-    model_architecture = {0:[n_components_nonmeal, n_mix_nonmeal], 1:[n_components_meal, n_mix_meal], 2:[n_components_nonmeal, n_mix_nonmeal], 3:[n_components_nonmeal, n_mix_nonmeal], 4:[n_components_nonmeal, n_mix_nonmeal], 5:[n_components_nonmeal, n_mix_nonmeal],6:[n_components_nonmeal, n_mix_nonmeal]}
+    model_architecture = {0:[n_components_nonmeal, n_mix_nonmeal], 1:[n_components_meal, n_mix_meal]}
+    #model_architecture = {0:[3,3], 1:[5,7], 2:[5,5], 3:[5,5], 4:[5,5], 5:[5,5],6:[5,5]}
     
     # Find recorded data
     root_folder_path = 'C:\\Users\\MajaE\\src\\repos\\master_ML\\Data'
