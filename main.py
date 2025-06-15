@@ -18,9 +18,10 @@ def main():
     n_components_nonmeal = 9    # Number of hidden states in the model for nonmeal model
     n_segments = 70             # Number of segments in a sub sequence for testing
     update_features = False     # Bool of whether or not to update features, or use previous result from function
-    model = "PROBABILITY_HMM"    # Machine learning method to use, LDA/HMM/RNN/L_P
-    validation_set = True       # True tests on validation set, while False uses test set
+    model = "HMM"    # Machine learning method to use, LDA/HMM/RNN/L_P
+    validation_set = False       # True tests on validation set, while False uses test set
     multiclass = False           # Several classes/ meal and non-meal
+    loso = True                 # Parameter to decide if fold will be based on randomized between recordings or leave one subject out
 
     # Generate test name based on parameters
     suffix = "validation" if validation_set else "test" 
@@ -28,7 +29,6 @@ def main():
     test_name = f"{model}_{suffix}{multiclass_suffix}"
 
     model_architecture = {0:[n_components_nonmeal, n_mix_nonmeal], 1:[n_components_meal, n_mix_meal]}
-    #model_architecture = {0:[3,3], 1:[5,7], 2:[5,5], 3:[5,5], 4:[5,5], 5:[5,5],6:[5,5]}
     
     # Find recorded data
     root_folder_path = 'C:\\Users\\MajaE\\src\\repos\\master_ML\\Data'
@@ -42,6 +42,6 @@ def main():
     features = feature_selection.feature_selection_extraction(features,model)
 
     # Run test
-    run.run_test(model,validation_set,test_name,features,labels,recording_ids,model_architecture,[segment_length,overlap_length,n_segments], multiclass)
+    run.run_test(model,validation_set,test_name,features,labels,recording_ids,model_architecture,[segment_length,overlap_length,n_segments], multiclass,loso)
     
 main()

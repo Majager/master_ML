@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 import datetime
 import random
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, GroupKFold
 from sklearn.metrics import f1_score
 from sklearn.base import BaseEstimator, ClassifierMixin
 import machine_learning
@@ -258,10 +258,36 @@ def run_HMM_model_test(train_data, train_labels, train_recording_ids, test_data,
     hmm = train_manager(hmm,train_data,train_labels)
 
     true, predictions, predictions_proba = test_manager(hmm=hmm,data=test_data,labels=test_labels,n_segments=segment_parameters[2])
-        
+
     # Store results to pickle file
     r_path = machine_learning.store_results_filename(test_name,timestamp)
     full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
         pickle.dump([true,predictions,predictions_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
     machine_learning.store_parameters(test_name, ["test"])
+
+def loso_cv(data, labels, recording_ids, test_name, model_arcitechture, segment_parameters):
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Cross-validation loop to be able to average over all folds
+    groupkfold = GroupKFold(n_splits=10)
+    groups = np.array([0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,4,5,5,5,5,5,5,6,6,6,7,7,8,8,9,9])
+    for fold, (train_idx, validation_idx) in enumerate(groupkfold.split(data,labels,groups)):
+        # Split data
+        train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,validation_idx)
+        
+        # Train HMM  based on train set of this fold
+        hmm = HMM(model_arcitechture)
+        hmm = train_manager(hmm,train_data,train_labels)
+
+        # Test HMM model based on the validation fold of this iteration
+        true, predictions, predictions_proba = test_manager(hmm=hmm,data=validation_data,labels=validation_labels,n_segments=segment_parameters[2])
+        
+        # Store results to pickle file
+        r_path = machine_learning.store_results_filename(test_name,timestamp)
+        full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
+        with open(full_path,'wb') as handle:
+            pickle.dump([true,predictions,predictions_proba,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)            
+        time.sleep(2)
+    
+    machine_learning.store_parameters(test_name, ["loso"])

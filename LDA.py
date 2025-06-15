@@ -5,7 +5,7 @@ import datetime
 import os
 import pickle
 import time
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, GroupKFold
 import machine_learning
 
 def revert_to_meal_or_nomeal(true, predictions):
@@ -61,7 +61,7 @@ def LDA_probability_analysis(data, labels, recording_ids, test_name, segment_par
             r_path = machine_learning.store_results_filename(test_name,timestamps[idx])
             full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
             with open(full_path,'wb') as handle:
-                pickle.dump([validation_labels,predictions,predictions_proba,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)            
+                pickle.dump([validation_labels,predictions,meal_probabilities,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)            
     
     machine_learning.store_parameters(test_name, thresholds)
         
@@ -105,11 +105,14 @@ def train_test(train_data, train_labels, train_recording_ids, test_data, test_la
     train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
     classifier.fit(train_data, train_labels)
 
-    predictions = []
-    predictions_proba = []
+    predictions, meal_probabilities = [], []
     for idx in range(len(test_data)):
-        predictions.append(classifier.predict(test_data[idx]))
-        predictions_proba.append(classifier.predict_proba(test_data[idx]))
+        predictions_proba_recording = classifier.predict_proba(test_data[idx])
+        meal_probabilities_recording = predictions_proba_recording[:,1]
+        meal_probabilities.append(meal_probabilities_recording)
+
+    threshold = 0.37
+    predictions = [[int(p > threshold) for p in recording] for recording in meal_probabilities]
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -117,6 +120,40 @@ def train_test(train_data, train_labels, train_recording_ids, test_data, test_la
     r_path = machine_learning.store_results_filename(test_name,timestamp)
     full_path = os.path.join(r_path,f"test.pickle")
     with open(full_path,'wb') as handle:
-        pickle.dump([test_labels,predictions,predictions_proba,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump([test_labels,predictions,meal_probabilities,test_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)
     
     machine_learning.store_parameters(test_name, ["test"])
+
+def loso_cv(data, labels, recording_ids, test_name, segment_parameters):
+    segment_parameters[2] = 1
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Cross-validation loop to be able to average over all folds
+    groupkfold = GroupKFold(n_splits=10)
+    groups = np.array([0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,4,5,5,5,5,5,5,6,6,6,7,7,8,8,9,9])
+    for fold, (train_idx, validation_idx) in enumerate(groupkfold.split(data,labels,groups)):
+        # Split data
+        train_data, train_labels, _, validation_data, validation_labels, validation_recording_ids = machine_learning.split_data(data,labels,recording_ids,validation_idx)
+        
+        # Train LDA
+        classifier = LinearDiscriminantAnalysis(solver="eigen",shrinkage=0.9)
+        train_data, train_labels = np.concatenate(train_data,axis=0), np.concatenate(train_labels,axis=0)
+        classifier.fit(train_data, train_labels)
+
+        predictions, meal_probabilities = [], []
+        for idx in range(len(validation_data)):
+            predictions_proba_recording = classifier.predict_proba(validation_data[idx])
+            meal_probabilities_recording = predictions_proba_recording[:,1]
+            meal_probabilities.append(meal_probabilities_recording)
+
+        threshold = 0.37
+        predictions = [[int(p > threshold) for p in recording] for recording in meal_probabilities]
+
+        # Store results to pickle file
+        r_path = machine_learning.store_results_filename(test_name,timestamp)
+        full_path = os.path.join(r_path,f"fold{fold+1}.pickle")
+        with open(full_path,'wb') as handle:
+            pickle.dump([validation_labels,predictions,meal_probabilities,validation_recording_ids,segment_parameters],handle,protocol=pickle.HIGHEST_PROTOCOL)            
+        time.sleep(2)
+    
+    machine_learning.store_parameters(test_name, ["loso"])
