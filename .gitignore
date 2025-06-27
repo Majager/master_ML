@@ -28,6 +28,7 @@ MANIFEST
 
 # Pickle files
 *.pickle
+*.csv
 
 # Virtual environment
 venv
